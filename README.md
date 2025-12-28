@@ -1,4 +1,3 @@
-cat > README.md << 'EOF'
 # node-monitor
 
 A modular, shell-based monitoring framework for Bitcoin, LND, Tor, Electrs, and system health.
