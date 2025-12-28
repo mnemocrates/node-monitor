@@ -30,7 +30,7 @@ A modular, shell-based monitoring framework for Bitcoin, LND, Tor, Electrs, and 
 
 
 ## Directory Structure
-
+`
 node-monitor/
 ├── checks.d/                 # Modular health checks (010-, 020-, 030-...)
 │   ├── 010-bitcoin-rpc.sh
@@ -57,4 +57,4 @@ node-monitor/
 ├── .gitignore                # Protects secrets and runtime files
 ├── README.md                 # Project documentation
 └── LICENSE                   # License
-
+`
