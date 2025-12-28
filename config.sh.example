@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+
+###############################################
+# Node Monitor Configuration (example)
+#
+# Copy this file to config.sh and customize
+# values for your environment.
+###############################################
+
+# --- Identity ---
+# Logical name for this node (used in alerts)
+NODE_NAME="my-node"
+HOSTNAME_SHORT="$(hostname -s)"
+
+# --- Paths to binaries (adjust if needed) ---
+BITCOIN_CLI="/usr/local/bin/bitcoin-cli"
+LNCLI="/usr/local/bin/lncli"
+SIGNAL_CLI="/usr/bin/signal-cli"
+CURL_BIN="/usr/bin/curl"
+NC_BIN="/usr/bin/nc"
+JQ_BIN="/usr/bin/jq"   # leave as-is even if jq isn't installed; scripts fall back gracefully
+
+# --- LND authentication (only set if lncli needs explicit paths) ---
+# Adjust these paths to match your LND installation.
+LND_TLSCERT="/home/youruser/.lnd/tls.cert"
+LND_MACAROON="/home/youruser/.lnd/data/chain/bitcoin/mainnet/admin.macaroon"
+
+# --- Tor configuration ---
+TOR_SOCKS_HOST="127.0.0.1"
+TOR_SOCKS_PORT=9050
+
+# Tor-proxied curl template
+TOR_CURL="${CURL_BIN} --socks5-hostname ${TOR_SOCKS_HOST}:${TOR_SOCKS_PORT} -s --connect-timeout 10 --max-time 20"
+
+# --- Signal configuration (optional) ---
+# These are examples only. Replace with your own values if you use signal-cli.
+SIGNAL_FROM="+15550000000"     # number registered with signal-cli
+SIGNAL_TO="+15550000000"       # your mobile number
+SIGNAL_TO_GROUP="your-signal-group-id-here"
+
+# --- Email Notification Settings (optional) ---
+
+# Enable or disable email alerts
+EMAIL_ENABLED=false
+
+# Recipient address
+EMAIL_TO="you@example.com"
+
+# The address to send from (often the same as EMAIL_TO)
+EMAIL_FROM="you@example.com"
+
+# SMTP server settings
+SMTP_SERVER="smtp.example.com"
+SMTP_PORT=587
+
+# SMTP credentials
+SMTP_USERNAME="you@example.com"
+SMTP_PASSWORD="your-smtp-password-or-app-password"
+
+# --- ntfy Notification Settings (recommended) ---
+
+# Enable or disable ntfy alerts
+NTFY_ENABLED=true
+
+# Topic URL (public or self-hosted)
+# Example: https://ntfy.sh/my-node-alerts
+NTFY_TOPIC="https://ntfy.sh/your-ntfy-topic-here"
+
+# Optional: Bearer token for protected topics
+NTFY_TOKEN=""
+
+# --- Thresholds ---
+DISK_WARN_PCT=85
+DISK_CRIT_PCT=90
+
+BITCOIND_MAX_LAG_WARN=2
+BITCOIND_MAX_LAG_CRIT=3
+
+# --- Behavior / policy ---
+STATE_DIR="/usr/local/node-monitor/state"
+CHECKS_DIR="/usr/local/node-monitor/checks.d"
+
+ALERT_ON_WARN=true
+ALERT_COOLDOWN_SECONDS=900   # 15 minutes
+
+# --- Retry settings for Tor/public checks ---
+RETRY_ATTEMPTS=3
+RETRY_DELAY_SECONDS=5
+

@@ -1,0 +1,7 @@
+config.sh
+state/
+*.log
+**/wallet.db
+**/channel.backup
+**/*.onion
+
