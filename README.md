@@ -76,6 +76,7 @@ node-monitor/
 ├── .gitignore                # Protects secrets and runtime files
 ├── README.md                 # Project documentation
 └── LICENSE                   # License
+```
 
 ## JSON State Files
 
@@ -94,6 +95,7 @@ Example:
     "latency_ms": 12
   }
 }
+```
 
 These files serve as the single source of truth for:
 
@@ -124,6 +126,7 @@ Example public JSON:
     "120-tor-onion": { "status": "OK" }
   }
 }
+```
 
 ## Writing New Checks
 
@@ -142,6 +145,7 @@ Example:
  echo "OK|Bitcoin Core RPC reachable (latency=12ms)"
  echo '{"latency_ms":12}'
  exit 0
+```
 
 `run-checks.sh` handles everything else.
 
