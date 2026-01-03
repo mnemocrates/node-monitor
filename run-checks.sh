@@ -12,6 +12,9 @@ mkdir -p "${STATE_DIR}"
 
 for check_script in "${CHECKS_DIR}"/*.sh; do
     check_name="$(basename "$check_script")"
+
+    # Strip .sh extension if present
+    check_name="${check_name%.sh}"
     
     # Run check and capture output + exit code
     output="$("$check_script" 2>&1 || true)"
