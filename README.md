@@ -111,7 +111,7 @@ If enabled in `config.sh`, `export-status.sh` generates a sanitized JSON snapsho
 This allows you to publish a public-facing status page without exposing:
 - Disk layout
 - Hardware details
-- XMRig/mining activity
+- Stratum/XMRig/mining activity
 - Sensitive metrics
 - Internal system state
 
