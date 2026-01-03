@@ -65,3 +65,13 @@ for check_script in "${CHECKS_DIR}"/*.sh; do
     write_json_state "$check_name" "$status" "$message" "$second_line"
 
 done
+
+# Export public status snapshot (optional)
+if [[ "${EXPORT_STATUS}" == "true" ]]; then
+    if [[ -x "${SCRIPT_DIR}/export-status.sh" ]]; then
+        "${SCRIPT_DIR}/export-status.sh" || \
+            echo "WARN: export-status.sh failed (non-fatal)" >&2
+    else
+        echo "WARN: export-status.sh not found or not executable" >&2
+    fi
+fi
