@@ -18,19 +18,14 @@ for check_script in "${CHECKS_DIR}"/*.sh; do
     output="$("$check_script" 2>&1 || true)"
     exit_code=$?
 
-    # Default if script misbehaves
-    status="CRIT"
-    message="Check ${check_name} returned invalid format or crashed: ${output}"
+    # Split output into first line (status|message) and second line (metrics JSON)
+    first_line="$(echo "$output" | head -n1)"
+    second_line="$(echo "$output" | sed -n '2p')"
 
-    if [[ "$output" == *"|"* ]]; then
-        status="${output%%|*}"
-        message="${output#*|}"
-    fi
-
-    echo "${status}: ${check_name} - ${message}"
+    status="${first_line%%|*}"
+    message="${first_line#*|}"
 
     # Normalize status from exit code if needed
-    # 0=OK, 1=WARN, 2=CRIT
     case "$exit_code" in
         0) norm_status="OK" ;;
         1) norm_status="WARN" ;;
@@ -38,37 +33,33 @@ for check_script in "${CHECKS_DIR}"/*.sh; do
         *) norm_status="CRIT" ;;
     esac
 
-    # Prefer explicit status text if it matches known values
     case "$status" in
-        OK|WARN|CRIT) ;; # keep as is
+        OK|WARN|CRIT) ;; # keep
         *) status="$norm_status" ;;
     esac
 
+    # Print console output (unchanged)
+    echo "${status}: ${check_name} - ${message}"
+
+    # Read previous JSON state
+    json_file="${STATE_DIR}/check-status/${check_name}.json"
     prev_status="UNKNOWN"
-    if [[ -f "$state_file" ]]; then
-        prev_status="$(cat "$state_file")"
+    if [[ -f "$json_file" ]]; then
+        prev_status="$(jq -r '.status' "$json_file" 2>/dev/null || echo "UNKNOWN")"
     fi
 
-    # Decide on alerting based on previous vs current
+    # Alerting logic (unchanged)
     if [[ "$status" == "OK" ]]; then
         if [[ "$prev_status" == "WARN" || "$prev_status" == "CRIT" ]]; then
-            # Recovery
-            echo "OK" > "$state_file"
-            send_alert "Recovery: ${check_name}" "${check_name} is now OK on btc-node-01: ${message}"
-        else
-            # Staying OK: just record
-            echo "OK" > "$state_file"
+            send_alert "Recovery: ${check_name}" "${check_name} is now OK on ${NODE_NAME}: ${message}"
         fi
     else
-        # WARN or CRIT
         if [[ "$prev_status" != "$status" ]]; then
-            # New WARN/CRIT state: alert
-            echo "$status" > "$state_file"
-            send_alert "${status}: ${check_name}" "${check_name} status is ${status} on btc-node-01: ${message}"
-        else
-            # Same WARN/CRIT as last time: no spam, just keep state
-            echo "$status" > "$state_file"
+            send_alert "${status}: ${check_name}" "${check_name} status is ${status} on ${NODE_NAME}: ${message}"
         fi
     fi
-done
 
+    # Write JSON state file
+    write_json_state "$check_name" "$status" "$message" "$second_line"
+
+done

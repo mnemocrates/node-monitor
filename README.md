@@ -6,16 +6,36 @@ A modular, shell-based monitoring framework for Bitcoin, LND, Tor, Electrs, and 
 - Modular check scripts (`checks.d/`)
 - Severity-based results (OK / WARN / CRIT)
 - Stateful alerting (alerts only on state changes)
+- JSON-based state files for each check
 - ntfy, email, and Signal notification support
 - Backup monitoring (daily, watcher, offsite)
 - Heartbeat notifications
 - Fully POSIX-compatible
+- Public-safe status export (optional)
+
+## Architecture Overview
+
+Each check script outputs:
+
+1. A human-readable summary (STATUS|message)
+2. Optional machine-readable JSON metrics
+
+`run-checks.sh`:
+
+- Executes all checks in numeric order
+- Parses results
+- Compares against previous state
+- Sends alerts only on state transitions
+- Writes a JSON state file per check
+- Optionally exports a public-safe status snapshot
+
+This design keeps check scripts simple while centralizing alerting and state management.
 
 ## Getting Started
 
 1. Clone the repository:
 
-`git clone https://github.com/<yourname>/node-monitor.git`
+`git clone https://github.com/mnemocrates/node-monitor.git`
 
 2. Copy the example configuration:
 
@@ -29,7 +49,7 @@ A modular, shell-based monitoring framework for Bitcoin, LND, Tor, Electrs, and 
 
 
 ## Directory Structure
-<pre>
+```
 node-monitor/
 ├── checks.d/                 # Modular health checks (010-, 020-, 030-...)
 │   ├── 010-bitcoin-rpc.sh
@@ -56,4 +76,75 @@ node-monitor/
 ├── .gitignore                # Protects secrets and runtime files
 ├── README.md                 # Project documentation
 └── LICENSE                   # License
-</pre>
+
+## JSON State Files
+
+Each check produces a JSON file under:
+
+`state/check-status/<check-name>.json`
+
+Example:
+
+```json
+{
+  "status": "OK",
+  "message": "Bitcoin Core RPC reachable (latency=12ms)",
+  "updated": "2026-01-03T04:11:59Z",
+  "metrics": {
+    "latency_ms": 12
+  }
+}
+
+These files serve as the single source of truth for:
+
+- Alerting
+- State transitions
+- Public export
+- Future dashboards
+
+## Public Status Export (Optional)
+
+If enabled in `config.sh`, `export-status.sh` generates a sanitized JSON snapshot containing only checks listed in `PUBLIC_CHECKS`.
+
+This allows you to publish a public-facing status page without exposing:
+- Disk layout
+- Hardware details
+- XMRig/mining activity
+- Sensitive metrics
+- Internal system state
+
+Example public JSON:
+
+```json
+{
+  "node": "my-node",
+  "generated_at": "2026-01-03T04:12:00Z",
+  "checks": {
+    "010-bitcoin-rpc": { "status": "OK" },
+    "120-tor-onion": { "status": "OK" }
+  }
+}
+
+## Writing New Checks
+
+Each check script should:
+
+1. Print `STATUS|message` on line 1
+2. Print optional JSON metrics on line 2
+3. Exit with code:
+ - 0 → OK
+ - 1 → WARN
+ - 2 → CRIT
+
+Example:
+
+```bash
+ echo "OK|Bitcoin Core RPC reachable (latency=12ms)"
+ echo '{"latency_ms":12}'
+ exit 0
+
+`run-checks.sh` handles everything else.
+
+## License
+
+This project is released under the MIT License. See `LICENSE` for details.

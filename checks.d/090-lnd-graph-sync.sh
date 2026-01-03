@@ -10,9 +10,11 @@ synced=$(echo "$info_json" | jq -r '.synced_to_graph // false')
 
 if [[ "$synced" == "true" ]]; then
     echo "OK|LND is synced to graph"
+    echo "" #no additional metrics
     exit 0
 else
     echo "WARN|LND graph is not fully synced"
+    echo "" #no additional metrics
     exit 1
 fi
 

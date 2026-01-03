@@ -10,9 +10,11 @@ synced=$(echo "$info_json" | jq -r '.synced_to_chain // false')
 
 if [[ "$synced" == "true" ]]; then
     echo "OK|LND is synced to chain"
+    echo "" #no additional metrics
     exit 0
 else
     echo "CRIT|LND is NOT synced to chain"
+    echo "" #no additional metrics
     exit 2
 fi
 

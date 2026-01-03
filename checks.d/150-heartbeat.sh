@@ -14,5 +14,6 @@ if [[ ! -f "$stamp_file" ]] || [[ "$(cat "$stamp_file")" != "$today" ]]; then
 fi
 
 echo "OK|Heartbeat processed for ${today}"
+echo "{\"date\":\"${today}\"}"
 exit 0
 

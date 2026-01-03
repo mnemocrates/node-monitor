@@ -80,3 +80,31 @@ send_alert() {
         /usr/local/node-monitor/send-ntfy.sh "${subject}: ${message}" || true
     fi
 }
+
+###############################################
+# Helper function to write JSON state files
+###############################################
+write_json_state() {
+    local check_name="$1"
+    local status="$2"
+    local message="$3"
+    local metrics_json="$4"   # may be empty
+
+    local timestamp
+    timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+
+    local json_file="${STATE_DIR}/check-status/${check_name}.json"
+
+    # Build JSON
+    {
+        echo "{"
+        echo "  \"status\": \"${status}\","
+        echo "  \"message\": \"${message}\","
+        echo "  \"updated\": \"${timestamp}\""
+        if [[ -n "$metrics_json" ]]; then
+            echo "  ,\"metrics\": ${metrics_json}"
+        fi
+        echo "}"
+    } > "$json_file"
+}
+

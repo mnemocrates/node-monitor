@@ -12,6 +12,7 @@ electrs_json=$(printf '{"jsonrpc":"2.0","id":1,"method":"blockchain.headers.subs
 # If empty or invalid, fail
 if [[ -z "$electrs_json" ]]; then
     echo "CRIT|Electrs did not respond on 127.0.0.1:50001"
+    echo "" #no additional metrics
     exit 2
 fi
 
@@ -21,6 +22,7 @@ core_height="$("$BITCOIN_CLI" getblockcount 2>/dev/null || echo 0)"
 
 if [[ "$electrs_height" -eq 0 || "$core_height" -eq 0 ]]; then
     echo "WARN|Unable to determine Electrs/Core heights (electrs=${electrs_height}, core=${core_height})"
+    echo "{\"electrs_height\":${electrs_height},\"core_height\":${core_height}}"
     exit 1
 fi
 
@@ -28,12 +30,15 @@ drift=$(( core_height - electrs_height ))
 
 if (( drift <= 1 )); then
     echo "OK|Electrs in sync with Core (drift=${drift})"
+    echo "{\"drift\":${drift}}"
     exit 0
 elif (( drift <= 3 )); then
     echo "WARN|Electrs drift=${drift} behind Core"
+    echo "{\"drift\":${drift}}"
     exit 1
 else
     echo "CRIT|Electrs drift=${drift} behind Core"
+    echo "{\"drift\":${drift}}"
     exit 2
 fi
 

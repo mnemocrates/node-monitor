@@ -1,89 +1,164 @@
 #!/usr/bin/env bash
 
-###############################################
+############################################################
 # Node Monitor Configuration (example)
 #
-# Copy this file to config.sh and customize
-# values for your environment.
-###############################################
+# Copy this file to config.sh and customize values for
+# your environment. This example contains no sensitive or
+# system‑specific information.
+############################################################
 
-# --- Identity ---
-# Logical name for this node (used in alerts)
+##############################
+# Identity
+##############################
+
+# Logical name for this node (used in alerts and exports)
 NODE_NAME="my-node"
+
+# Short hostname (auto-detected; override if needed)
 HOSTNAME_SHORT="$(hostname -s)"
 
-# --- Paths to binaries (adjust if needed) ---
+
+##############################
+# Paths to Binaries
+##############################
+
 BITCOIN_CLI="/usr/local/bin/bitcoin-cli"
 LNCLI="/usr/local/bin/lncli"
 SIGNAL_CLI="/usr/bin/signal-cli"
 CURL_BIN="/usr/bin/curl"
 NC_BIN="/usr/bin/nc"
-JQ_BIN="/usr/bin/jq"   # leave as-is even if jq isn't installed; scripts fall back gracefully
+JQ_BIN="/usr/bin/jq"   # jq is optional; scripts degrade gracefully
 
-# --- LND authentication (only set if lncli needs explicit paths) ---
+
+##############################
+# LND Authentication
+##############################
+
 # Adjust these paths to match your LND installation.
 LND_TLSCERT="/home/youruser/.lnd/tls.cert"
 LND_MACAROON="/home/youruser/.lnd/data/chain/bitcoin/mainnet/admin.macaroon"
 
-# --- Tor configuration ---
+
+##############################
+# Tor Configuration
+##############################
+
 TOR_SOCKS_HOST="127.0.0.1"
 TOR_SOCKS_PORT=9050
 
-# Tor-proxied curl template
+# Tor‑proxied curl template
 TOR_CURL="${CURL_BIN} --socks5-hostname ${TOR_SOCKS_HOST}:${TOR_SOCKS_PORT} -s --connect-timeout 10 --max-time 20"
 
-# --- Signal configuration (optional) ---
-# These are examples only. Replace with your own values if you use signal-cli.
-SIGNAL_FROM="+15550000000"     # number registered with signal-cli
-SIGNAL_TO="+15550000000"       # your mobile number
+
+##############################
+# Signal Notification (optional)
+##############################
+
+# Replace with your own values if using signal-cli.
+SIGNAL_FROM="+15550000000"
+SIGNAL_TO="+15550000000"
 SIGNAL_TO_GROUP="your-signal-group-id-here"
 
-# --- Email Notification Settings (optional) ---
 
-# Enable or disable email alerts
+##############################
+# Email Notification (optional)
+##############################
+
 EMAIL_ENABLED=false
 
-# Recipient address
 EMAIL_TO="you@example.com"
-
-# The address to send from (often the same as EMAIL_TO)
 EMAIL_FROM="you@example.com"
 
-# SMTP server settings
 SMTP_SERVER="smtp.example.com"
 SMTP_PORT=587
 
-# SMTP credentials
 SMTP_USERNAME="you@example.com"
 SMTP_PASSWORD="your-smtp-password-or-app-password"
 
-# --- ntfy Notification Settings (recommended) ---
 
-# Enable or disable ntfy alerts
+##############################
+# ntfy Notification (recommended)
+##############################
+
 NTFY_ENABLED=true
 
-# Topic URL (public or self-hosted)
 # Example: https://ntfy.sh/my-node-alerts
 NTFY_TOPIC="https://ntfy.sh/your-ntfy-topic-here"
 
-# Optional: Bearer token for protected topics
+# Optional bearer token for protected topics
 NTFY_TOKEN=""
 
-# --- Thresholds ---
+
+##############################
+# Thresholds
+##############################
+
 DISK_WARN_PCT=85
 DISK_CRIT_PCT=90
 
 BITCOIND_MAX_LAG_WARN=2
 BITCOIND_MAX_LAG_CRIT=3
 
-# --- Behavior / policy ---
+
+##############################
+# Behavior / Policy
+##############################
+
 STATE_DIR="/usr/local/node-monitor/state"
 CHECKS_DIR="/usr/local/node-monitor/checks.d"
 
 ALERT_ON_WARN=true
 ALERT_COOLDOWN_SECONDS=900   # 15 minutes
 
-# --- Retry settings for Tor/public checks ---
+
+##############################
+# Retry Settings (Tor / Public Checks)
+##############################
+
 RETRY_ATTEMPTS=3
 RETRY_DELAY_SECONDS=5
 
+
+############################################################
+# Status Export Configuration
+############################################################
+
+# Enable or disable exporting a public‑safe status snapshot
+EXPORT_STATUS=true
+
+# Export method:
+#   scp   - push to remote host
+#   local - write to a local file
+#   none  - disable exporting
+EXPORT_METHOD="scp"
+
+# For EXPORT_METHOD=scp
+EXPORT_SCP_TARGET="user@remote-host:/path/to/status.json"
+EXPORT_SCP_IDENTITY="${HOME}/.ssh/id_ed25519"
+
+# For EXPORT_METHOD=local
+EXPORT_LOCAL_TARGET="/var/www/status.json"
+
+
+##############################
+# Public‑Safe Checks
+##############################
+
+# Only these checks will appear in the public export.
+# All other checks remain private.
+PUBLIC_CHECKS=(
+  "010-bitcoin-rpc"
+  "020-bitcoin-blockheight"
+  "030-bitcoin-mempool"
+  "040-lnd-wallet"
+  "050-lnd-peers"
+  "060-lnd-channels"
+  "070-lnd-blockheight"
+  "080-lnd-chain-sync"
+  "090-lnd-graph-sync"
+  "100-tor-socks"
+  "110-tor-circuit"
+  "120-tor-onion"
+  "130-electrs-sync"
+)
