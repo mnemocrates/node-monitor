@@ -90,6 +90,9 @@ write_json_state() {
     local message="$3"
     local metrics_json="$4"   # may be empty
 
+    # Strip .sh extension if present
+    check_name="${check_name%.sh}"
+
     local timestamp
     timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
