@@ -12,8 +12,7 @@ mkdir -p "${STATE_DIR}"
 
 for check_script in "${CHECKS_DIR}"/*.sh; do
     check_name="$(basename "$check_script")"
-    state_file="${STATE_DIR}/${check_name}.status"
-
+    
     # Run check and capture output + exit code
     output="$("$check_script" 2>&1 || true)"
     exit_code=$?
@@ -42,7 +41,7 @@ for check_script in "${CHECKS_DIR}"/*.sh; do
     echo "${status}: ${check_name} - ${message}"
 
     # Read previous JSON state
-    json_file="${STATE_DIR}/check-status/${check_name}.json"
+    json_file="${STATE_DIR}/${check_name}.json"
     prev_status="UNKNOWN"
     if [[ -f "$json_file" ]]; then
         prev_status="$(jq -r '.status' "$json_file" 2>/dev/null || echo "UNKNOWN")"

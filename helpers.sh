@@ -93,9 +93,9 @@ write_json_state() {
     local timestamp
     timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
-    local json_file="${STATE_DIR}/check-status/${check_name}.json"
+    local json_file="${STATE_DIR}/${check_name}.json"
 
-    # Build JSON
+    # Build JSON:
     {
         echo "{"
         echo "  \"status\": \"${status}\","
