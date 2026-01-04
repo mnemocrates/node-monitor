@@ -133,7 +133,22 @@ EXPORT_STATUS=true
 #   none  - disable exporting
 EXPORT_METHOD="scp"
 
+# Export transport:
+#   ssh     - use standard SSH (default for scp)
+#   torsocks  - use torsocks for Tor‑based export
+EXPORT_TRANSPORT="torsocks"
+
+# Location of torsocks binary (if EXPORT_TRANSPORT="torsocks")
+TORSOCKS_BIN="/usr/bin/torsocks"
+
 # For EXPORT_METHOD=scp
+# 
+# IMPORTANT: if EXPORT_TRANSPORT is "torsocks", ensure that the
+# target host is reachable over Tor (e.g., .onion address).
+# 
+# Examples:
+#   EXPORT_SCP_TARGET="user@remote-host:/path/to/status.json"
+#   EXPORT_SCP_TARGET="user@abcd1234xyz.onion:/path/to/status.json"
 EXPORT_SCP_TARGET="user@remote-host:/path/to/status.json"
 EXPORT_SCP_IDENTITY="${HOME}/.ssh/id_ed25519"
 

@@ -42,14 +42,19 @@ done
 echo "$MERGED" | jq '.' > "${EXPORT_FILE}"
 
 # Export method
+
 case "$EXPORT_METHOD" in
   scp)
-    scp -i "${EXPORT_SCP_IDENTITY}" \
-        -q "${EXPORT_FILE}" "${EXPORT_SCP_TARGET}"
+    if [[ "$EXPORT_TRANSPORT" == "torsocks" ]]; then
+      "$TORSOCKS_BIN" scp -i "${EXPORT_SCP_IDENTITY}" -q \
+        "${EXPORT_FILE}" "${EXPORT_SCP_TARGET}"
+    else
+      scp -i "${EXPORT_SCP_IDENTITY}" -q \
+        "${EXPORT_FILE}" "${EXPORT_SCP_TARGET}"
+    fi
     ;;
   local)
     cp "${EXPORT_FILE}" "${EXPORT_LOCAL_TARGET}"
     ;;
-  none)
-    ;;
 esac
+
