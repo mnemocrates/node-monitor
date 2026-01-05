@@ -63,39 +63,35 @@ CAPABILITIES=$(echo "$FEATURES" | jq -r '[
   --argjson policy_summary "$POLICY_SUMMARY" \
   --arg last_updated "$NOW" \
   '{
-    alias: $alias,
-    pubkey: $pubkey,
-    color: $color,
-    endpoints: $endpoints,
-    version: $version,
-    chains: $chains,
-    network: $network,
-    sync: {
-      to_chain: $sync_chain,
-      to_graph: $sync_graph
+    "alias": $alias,
+    "pubkey": $pubkey,
+    "color": $color,
+    "endpoints": $endpoints,
+    "version": $version,
+    "chains": $chains,
+    "network": $network,
+    "sync": {
+      "to_chain": $sync_chain,
+      "to_graph": $sync_graph
     },
-    channels: {
-      active: $num_active,
-      pending: $num_pending,
-      inactive: $num_inactive,
-      total_capacity: $capacity,
-      local_balance: $local_balance,
-      remote_balance: $remote_balance
+    "channels": {
+      "active": $num_active,
+      "pending": $num_pending,
+      "inactive": $num_inactive,
+      "total_capacity": $capacity,
+      "local_balance": $local_balance,
+      "remote_balance": $remote_balance
     },
-    capabilities: $capabilities,
-    policy_summary: $policy_summary,
-    links: {
-      amboss: ("https://amboss.space/node/" + $pubkey),
-      "1ml": ("https://1ml.com/node/" + $pubkey),
-      mempool: ("https://mempool.space/lightning/node/" + $pubkey)
+    "capabilities": $capabilities,
+    "policy_summary": $policy_summary,
+    "links": {
+      "amboss": ("https://amboss.space/node/\($pubkey)"),
+      "1ml": ("https://1ml.com/node/\($pubkey)"),
+      "mempool": ("https://mempool.space/lightning/node/\($pubkey)")
     },
-    last_updated: $last_updated,
-    signed_fields: ["alias", "pubkey", "endpoints", "channels", "policy_summary", "last_updated"]
-    median: ((.channel_fees | map(.time_lock_delta // 40) | sort | if length > 0 then .[length / 2 | floor] else 40 end) // 40),
-    min: ((.channel_fees | map(.time_lock_delta // 40) | min) // 40),
-    max: ((.channel_fees | map(.time_lock_delta // 40) | max) // 40)
-  }
-}')
+    "last_updated": $last_updated,
+    "signed_fields": ["alias", "pubkey", "endpoints", "channels", "policy_summary", "last_updated"]
+  }')
 
 # Build structured endpoints from URIs
 ENDPOINTS=$(echo "$URIS" | jq '[.[] | {
