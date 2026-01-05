@@ -44,7 +44,72 @@ CAPABILITIES=$(echo "$FEATURES" | jq -r '[
   (if (."31" or ."30") then "AMP" else empty end),
   (if (."55" or ."54") then "KeySend" else empty end),
   (if (."45" or ."44") then "Explicit Channel Type" else empty end),
-  (if (.alias "$ALIAS" \
+  (if (."1"  or ."0")  then "Data Loss Protection" else empty end)
+] | unique')
+
+# Get channel count and capacity
+NUM_ACTIVE_CHANNELS=$(echo "$NODE_INFO" | jq -r '.num_active_channels // 0')
+NUM_PENDING_CHANNELS=$(echo "$NODE_INFO" | jq -r '.num_pending_channels // 0')
+NUM_INACTIVE_CHANNELS=$(echo "$NODE_INFO" | jq -r '.num_inactive_channels // 0')
+
+# Get detailed channel information
+CHANNELS_INFO=$(lncli_safe listchannels 2>/dev/null || echo '{"channels":[]}')
+TOTAL_LOCAL_BALANCE=$(echo "$CHANNELS_INFO" | jq '[.channels[].local_balance // 0] | add // 0')
+TOTAL_REMOTE_BALANCE=$(echo "$CHANNELS_INFO" | jq '[.channels[].remote_balance // 0] | add // 0')
+TOTAL_CAPACITY=$(echo "$CHANNELS_INFO" | jq '[.channels[].capacity // 0] | add // 0')
+
+# Get fee policies and calculate aggregates
+FEE_REPORT=$(lncli_safe feereport 2>/dev/null || echo '{"channel_fees":[]}')
+
+# Calculate policy summary aggregates
+POLICY_SUMMARY=$(echo "$FEE_REPORT" | jq '{
+  channels_count: (.channel_fees | length),
+  fee_base_msat: {
+    median: ((.channel_fees | map(.base_fee_msat // 0) | sort | if length > 0 then .[length / 2 | floor] else 0 end) // 0),
+    min: ((.channel_fees | map(.base_fee_msat // 0) | min) // 0),
+    max: ((.channel_fees | map(.base_fee_msat // 0) | max) // 0)
+  },
+  fee_rate_ppm: {
+    median: ((.channel_fees | map(.fee_rate // 0) | sort | if length > 0 then .[length / 2 | floor] else 0 end) // 0),
+    min: ((.channel_fees | map(.fee_rate // 0) | min) // 0),
+    max: ((.channel_fees | map(.fee_rate // 0) | max) // 0)
+  },
+  time_lock_delta: {
+    median: ((.channel_fees | map(.time_lock_delta // 40) | sort | if length > 0 then .[length / 2 | floor] else 40 end) // 40),
+    min: ((.channel_fees | map(.time_lock_delta // 40) | min) // 40),
+    max: ((.channel_fees | map(.time_lock_delta // 40) | max) // 40)
+  }
+}')
+
+# Build structured endpoints from URIs
+ENDPOINTS=$(echo "$URIS" | jq '[.[] | {
+  type: (if (. | contains(".onion")) then "tor" 
+        elif (. | contains(".i2p")) then "i2p" 
+        else "clearnet" end),
+  addr: .,
+  preferred: true
+}]')
+
+# If no endpoints, create empty array
+if [[ "$ENDPOINTS" == "null" ]] || [[ "$ENDPOINTS" == "[]" ]]; then
+  ENDPOINTS="[]"
+fi
+
+# Build the unsigned nodecard JSON
+UNSIGNED_DATA=$(jq -n \
+  --arg node_name "$NODE_NAME" \
+  --arg alias "$ALIAS" \
+  --arg color "$COLOR" \
+  --arg pubkey "$PUBKEY" \
+  --argjson uris "$URIS" \
+  --arg version "$VERSION" \
+  --argjson num_active "$NUM_ACTIVE_CHANNELS" \
+  --argjson num_pending "$NUM_PENDING_CHANNELS" \
+  --argjson num_inactive "$NUM_INACTIVE_CHANNELS" \
+  --argjson local_balance "$TOTAL_LOCAL_BALANCE" \
+  --argjson remote_balance "$TOTAL_REMOTE_BALANCE" \
+  --argjson capacity "$TOTAL_CAPACITY" \
+  --argjalias "$ALIAS" \
   --arg pubkey "$PUBKEY" \
   --arg color "$COLOR" \
   --argjson endpoints "$ENDPOINTS" \
@@ -85,73 +150,12 @@ CAPABILITIES=$(echo "$FEATURES" | jq -r '[
     "capabilities": $capabilities,
     "policy_summary": $policy_summary,
     "links": {
-      "amboss": ("https://amboss.space/node/\($pubkey)"),
-      "1ml": ("https://1ml.com/node/\($pubkey)"),
-      "mempool": ("https://mempool.space/lightning/node/\($pubkey)")
+      "amboss": "https://amboss.space/node/\($pubkey)",
+      "1ml": "https://1ml.com/node/\($pubkey)",
+      "mempool": "https://mempool.space/lightning/node/\($pubkey)"
     },
     "last_updated": $last_updated,
-    "signed_fields": ["alias", "pubkey", "endpoints", "channels", "policy_summary", "last_updated"]
-  }')
-
-# Build structured endpoints from URIs
-ENDPOINTS=$(echo "$URIS" | jq '[.[] | {
-  type: (if (. | contains(".onion")) then "tor" 
-        elif (. | contains(".i2p")) then "i2p" 
-        else "clearnet" end),
-  addr: .,
-  preferred: true
-}]')
-
-# If no endpoints, create empty array
-if [[ "$ENDPOINTS" == "null" ]] || [[ "$ENDPOINTS" == "[]" ]]; then
-  ENDPOINTS="[]"
-fi
-
-# Build the unsigned nodecard JSON
-UNSIGNED_DATA=$(jq -n \
-  --arg node_name "$NODE_NAME" \
-  --arg alias "$ALIAS" \
-  --arg color "$COLOR" \
-  --arg pubkey "$PUBKEY" \
-  --argjson uris "$URIS" \
-  --arg version "$VERSION" \
-  --argjson num_active "$NUM_ACTIVE_CHANNELS" \
-  --argjson num_pending "$NUM_PENDING_CHANNELS" \
-  --argjson num_inactive "$NUM_INACTIVE_CHANNELS" \
-  --argjson local_balance "$TOTAL_LOCAL_BALANCE" \
-  --argjson remote_balance "$TOTAL_REMOTE_BALANCE" \
-  --argjson capacity "$TOTAL_CAPACITY" \
-  --argjson channel_fees "$CHANNEL_FEES" \
-  --arg timestamp "$NOW" \
-  '{
-    node_name: $node_name,
-    alias: $alias,
-    color: $color,
-    pubkey: $pubkey,
-    uris: $uris,
-    version: $version,
-    channels: {
-      active: $num_active,
-      pending: $num_pending,
-      inactive: $num_inactive,
-      total_capacity: $capacity,
-      local_balance: $local_balance,
-      remote_balance: $remote_balance
-    },
-    fee_policies: $channel_fees,
-    timestamp: $timestamp
-  }')
-
-# Write unsigned data to temporary file
-echo "$UNSIGNED_DATA" | jq '.' > "${NODECARD_UNSIGNED}"
-
-# Sign the JSON data
-echo "Signing nodecard with node key..."
-UNSIGNED_COMPACT=$(echo "$UNSIGNED_DATA" | jq -c '.')
-SIGNATURE=$(lncli_safe signmessage "$UNSIGNED_COMPACT" 2>/dev/null | jq -r '.signature // ""')
-
-if [[ -z "$SIGNATURE" ]]; then
-  echo "Error: Failed to sign nodecard" >&2
+    "signed_fields": ["alias", "pubkey", "endpoints", "channels", "policy_summary", "last_updated"]sign nodecard" >&2
   exit 1
 fi
 
