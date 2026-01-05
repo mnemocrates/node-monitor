@@ -139,8 +139,9 @@ UNSIGNED_DATA=$(jq -n \
     "policy_summary": $policy_summary,
     "links": {
       "amboss": "https://amboss.space/node/\($pubkey)",
-      "1ml": "https://1ml.com/node/\($pubkey)",
-      "mempool": "https://mempool.space/lightning/node/\($pubkey)"
+      "lightningnetwork+":"https://lightningnetwork.plus/node/\($pubkey)",
+      "lnrouter":"https://lnrouter.app/node/\($pubkey)",
+      "mempool": "https://mempool.space/lightning/node/\($pubkey)"      
     },
     "last_updated": $last_updated,
     "signed_fields": ["alias", "pubkey", "endpoints", "channels", "policy_summary", "last_updated"]
