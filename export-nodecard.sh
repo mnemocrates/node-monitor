@@ -139,7 +139,7 @@ UNSIGNED_DATA=$(jq -n \
     "policy_summary": $policy_summary,
     "links": {
       "amboss": "https://amboss.space/node/\($pubkey)",
-      "lightningnetwork+":"https://lightningnetwork.plus/node/\($pubkey)",
+      "lightningnetwork+":"https://lightningnetwork.plus/nodes/\($pubkey)",
       "lnrouter":"https://lnrouter.app/node/\($pubkey)",
       "mempool": "https://mempool.space/lightning/node/\($pubkey)"      
     },
