@@ -177,3 +177,38 @@ PUBLIC_CHECKS=(
   "120-tor-onion"
   "130-electrs-sync"
 )
+
+
+############################################################
+# Nodecard Export Configuration
+############################################################
+
+# Enable or disable exporting a signed nodecard with node information
+# (alias, color, URIs, channels, fee policies, etc.)
+# This is typically run on a daily schedule, separate from run-checks.sh
+NODECARD_EXPORT_ENABLED=false
+
+# Export method:
+#   scp   - push to remote host
+#   local - write to a local file
+#   none  - disable uploading (still creates local nodecard.json)
+NODECARD_EXPORT_METHOD="scp"
+
+# Export transport:
+#   ssh       - use standard SSH (default for scp)
+#   torsocks  - use torsocks for Tor‑based export
+NODECARD_EXPORT_TRANSPORT="torsocks"
+
+# For NODECARD_EXPORT_METHOD=scp
+# 
+# IMPORTANT: if NODECARD_EXPORT_TRANSPORT is "torsocks", ensure that the
+# target host is reachable over Tor (e.g., .onion address).
+# 
+# Examples:
+#   NODECARD_EXPORT_SCP_TARGET="user@remote-host:/path/to/nodecard.json"
+#   NODECARD_EXPORT_SCP_TARGET="user@abcd1234xyz.onion:/path/to/nodecard.json"
+NODECARD_EXPORT_SCP_TARGET="user@remote-host:/path/to/nodecard.json"
+NODECARD_EXPORT_SCP_IDENTITY="${HOME}/.ssh/id_ed25519"
+
+# For NODECARD_EXPORT_METHOD=local
+NODECARD_EXPORT_LOCAL_TARGET="/path/to/nodecard.json"

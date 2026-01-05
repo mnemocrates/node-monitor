@@ -128,6 +128,91 @@ Example public JSON:
 }
 ```
 
+## Node Card Export (Optional)
+
+The `export-nodecard.sh` script creates a cryptographically signed JSON document containing comprehensive node information. This is designed to be run on a separate schedule (typically daily) and is not automatically called by `run-checks.sh`.
+
+### What's Included
+
+The nodecard collects and exports:
+- **Node identity**: alias, color, pubkey, structured endpoints (with type detection for Tor/clearnet/I2P)
+- **Network info**: chains, network (mainnet/testnet), sync status
+- **Channel statistics**: active/pending/inactive counts, total capacity, local/remote balances
+- **Capabilities**: Detected features from node (AMP, MPP, KeySend, etc.)
+- **Policy summary**: Aggregated fee policy statistics (median, min, max) across all channels
+- **Links**: Pre-built URLs to popular Lightning explorers (Amboss, 1ML, Mempool)
+
+### Cryptographic Signing
+
+The entire JSON document is signed using `lncli signmessage` with your node's private key. The signature and a list of signed fields are included in the exported JSON, allowing anyone to verify the authenticity of the data using your node's public key.
+
+### Configuration
+
+Enable and configure in `config.sh`:
+
+```bash
+NODECARD_EXPORT_ENABLED=true
+NODECARD_EXPORT_METHOD="scp"           # scp, local, or none
+NODECARD_EXPORT_TRANSPORT="torsocks"   # ssh or torsocks
+NODECARD_EXPORT_SCP_TARGET="user@remote-host:/path/to/nodecard.json"
+NODECARD_EXPORT_SCP_IDENTITY="${HOME}/.ssh/id_ed25519"
+```
+
+### Usage
+
+Run manually or via cron (daily schedule recommended):
+
+```bash
+./export-nodecard.sh
+```
+
+Example output file (`nodecard.json`):
+
+```json
+{
+  "alias": "MyLightningNode",
+  "pubkey": "02abcdef...",
+  "color": "#3399ff",
+  "endpoints": [
+    { "type": "tor", "addr": "02abcdef...@example.onion:9735", "preferred": true }
+  ],
+  "version": "0.17.0-beta",
+  "chains": ["bitcoin"],
+  "network": "mainnet",
+  "sync": { "to_chain": true, "to_graph": true },
+  "channels": {
+    "active": 15,
+    "pending": 0,
+    "inactive": 1,
+    "total_capacity": 50000000,
+    "local_balance": 25000000,
+    "remote_balance": 24500000
+  },
+  "capabilities": ["TLV Onion", "MPP", "AMP", "KeySend"],
+  "policy_summary": {
+    "channels_count": 15,
+    "fee_base_msat": { "median": 0, "min": 0, "max": 1000 },
+    "fee_rate_ppm": { "median": 100, "min": 0, "max": 500 },
+    "time_lock_delta": { "median": 40, "min": 40, "max": 80 }
+  },
+  "links": {
+    "amboss": "https://amboss.space/node/02abcdef...",
+    "1ml": "https://1ml.com/node/02abcdef...",
+    "mempool": "https://mempool.space/lightning/node/02abcdef..."
+  },
+  "last_updated": "2026-01-04T12:00:00Z",
+  "signed_fields": ["alias", "pubkey", "endpoints", "channels", "policy_summary", "last_updated"],
+  "signature": "3045022100..."
+}
+```
+
+### Transport Options
+
+Like `export-status.sh`, the nodecard can be exported:
+- **Via SCP over Tor** (`.onion` addresses supported with torsocks)
+- **Via standard SCP/SSH** 
+- **To a local file** (useful for serving via web server)
+
 ## Writing New Checks
 
 Each check script should:
