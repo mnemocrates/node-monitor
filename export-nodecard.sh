@@ -97,19 +97,7 @@ fi
 
 # Build the unsigned nodecard JSON
 UNSIGNED_DATA=$(jq -n \
-  --arg node_name "$NODE_NAME" \
   --arg alias "$ALIAS" \
-  --arg color "$COLOR" \
-  --arg pubkey "$PUBKEY" \
-  --argjson uris "$URIS" \
-  --arg version "$VERSION" \
-  --argjson num_active "$NUM_ACTIVE_CHANNELS" \
-  --argjson num_pending "$NUM_PENDING_CHANNELS" \
-  --argjson num_inactive "$NUM_INACTIVE_CHANNELS" \
-  --argjson local_balance "$TOTAL_LOCAL_BALANCE" \
-  --argjson remote_balance "$TOTAL_REMOTE_BALANCE" \
-  --argjson capacity "$TOTAL_CAPACITY" \
-  --argjalias "$ALIAS" \
   --arg pubkey "$PUBKEY" \
   --arg color "$COLOR" \
   --argjson endpoints "$ENDPOINTS" \
@@ -155,7 +143,19 @@ UNSIGNED_DATA=$(jq -n \
       "mempool": "https://mempool.space/lightning/node/\($pubkey)"
     },
     "last_updated": $last_updated,
-    "signed_fields": ["alias", "pubkey", "endpoints", "channels", "policy_summary", "last_updated"]sign nodecard" >&2
+    "signed_fields": ["alias", "pubkey", "endpoints", "channels", "policy_summary", "last_updated"]
+  }')
+
+# Write unsigned data to temporary file
+echo "$UNSIGNED_DATA" | jq '.' > "${NODECARD_UNSIGNED}"
+
+# Sign the JSON data
+echo "Signing nodecard with node key..."
+UNSIGNED_COMPACT=$(echo "$UNSIGNED_DATA" | jq -c '.')
+SIGNATURE=$(lncli_safe signmessage "$UNSIGNED_COMPACT" 2>/dev/null | jq -r '.signature // ""')
+
+if [[ -z "$SIGNATURE" ]]; then
+  echo "Error: Failed to sign nodecard" >&2
   exit 1
 fi
 
