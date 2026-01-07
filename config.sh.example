@@ -82,6 +82,7 @@ SMTP_PASSWORD="your-smtp-password-or-app-password"
 ##############################
 
 NTFY_ENABLED=true
+NTFY_USE_TOR=true
 
 # Example: https://ntfy.sh/my-node-alerts
 NTFY_TOPIC="https://ntfy.sh/your-ntfy-topic-here"

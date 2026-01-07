@@ -3,16 +3,28 @@ set -euo pipefail
 
 message="$1"
 
+# Load config
 source /usr/local/node-monitor/config.sh
 
-if [ "${NTFY_ENABLED:-false}" != "true" ]; then
+# Exit silently if ntfy is disabled
+if [[ "${NTFY_ENABLED:-false}" != "true" ]]; then
     exit 0
 fi
 
-if [ -n "${NTFY_TOKEN:-}" ]; then
-    curl -s -H "Authorization: Bearer ${NTFY_TOKEN}" \
-         -d "${message}" \
-         "${NTFY_TOPIC}"
+# Build curl command based on Tor setting
+if [[ "${NTFY_USE_TOR:-false}" == "true" ]]; then
+    curl_cmd=(curl --socks5-hostname 127.0.0.1:9050 -s -d "$message")
 else
-    curl -s -d "${message}" "${NTFY_TOPIC}"
+    curl_cmd=(curl -s -d "$message")
 fi
+
+# Add Authorization header if token is configured
+if [[ -n "${NTFY_TOKEN:-}" ]]; then
+    curl_cmd+=(-H "Authorization: Bearer ${NTFY_TOKEN}")
+fi
+
+# Append the full URL (NTFY_TOPIC already contains it)
+curl_cmd+=("${NTFY_TOPIC}")
+
+# Execute
+"${curl_cmd[@]}"
