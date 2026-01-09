@@ -1,7 +1,11 @@
 config.sh
+fix-permissions.sh
 state/
 *.log
 **/wallet.db
 **/channel.backup
 **/*.onion
+
+# local.d/ - Keep README tracked but ignore custom check scripts
+local.d/*.sh
 

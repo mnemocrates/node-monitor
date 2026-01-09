@@ -50,6 +50,13 @@ TOR_SOCKS_PORT=9050
 # Tor‑proxied curl template
 TOR_CURL="${CURL_BIN} --socks5-hostname ${TOR_SOCKS_HOST}:${TOR_SOCKS_PORT} -s --connect-timeout 10 --max-time 20"
 
+# Tor Check Reliability Settings
+# Tor can be slow and transient failures are common during circuit building
+TOR_CHECK_RETRIES=3                  # Number of retry attempts for Tor checks
+TOR_CHECK_RETRY_DELAY=10             # Seconds between retry attempts
+TOR_CHECK_TIMEOUT=30                 # Connection timeout for Tor operations (seconds)
+TOR_FAILURE_CRIT_DURATION=900        # Only escalate to CRIT after failing for this many seconds (15 min default)
+
 
 ##############################
 # Signal Notification (optional)
@@ -98,8 +105,141 @@ NTFY_TOKEN=""
 DISK_WARN_PCT=85
 DISK_CRIT_PCT=90
 
+# Bitcoin Core Monitoring Thresholds
+# ---------------------------
+# RPC connectivity and performance
+BITCOIN_RPC_RETRIES=3                # Number of retry attempts for RPC calls
+BITCOIN_RPC_RETRY_DELAY=5            # Seconds between retry attempts
+BITCOIN_RPC_LATENCY_WARN=2000        # Warn if RPC latency exceeds this (milliseconds)
+BITCOIN_RPC_LATENCY_CRIT=5000        # Critical if RPC latency exceeds this (milliseconds)
+BITCOIN_RPC_FAILURE_GRACE=300        # Grace period before escalating to CRIT (seconds)
+
+# Sync status thresholds
+BITCOIN_VERIFICATION_PROGRESS_WARN=0.9999  # Warn if verification progress below this
+
+# Block height drift (vs external sources)
+BITCOIN_BLOCKHEIGHT_DRIFT_WARN=2     # Warn if drift exceeds this
+BITCOIN_BLOCKHEIGHT_DRIFT_CRIT=5     # Critical if drift exceeds this
+BITCOIN_BLOCKHEIGHT_CHECK_RETRIES=3  # Retry attempts for external API
+
+# Block age (time since last block)
+BITCOIN_BLOCK_AGE_WARN=1200          # Warn if last block older than 20 minutes (seconds)
+BITCOIN_BLOCK_AGE_CRIT=2400          # Critical if last block older than 40 minutes (seconds)
+
+# External block height sources (comma-separated, will try in order)
+BITCOIN_BLOCKHEIGHT_SOURCES="https://blockstream.info/api/blocks/tip/height,https://mempool.space/api/blocks/tip/height"
+BITCOIN_BLOCKHEIGHT_USE_TOR=false    # Use Tor for external API calls
+
 BITCOIND_MAX_LAG_WARN=2
 BITCOIND_MAX_LAG_CRIT=3
+
+# LND Monitoring Thresholds
+# ---------------------------
+# LND wallet/RPC connectivity
+LND_RPC_RETRIES=3                    # Number of retry attempts for LND RPC calls
+LND_RPC_RETRY_DELAY=5                # Seconds between retry attempts
+
+# Peer count thresholds
+LND_PEERS_WARN=3                     # Warn if fewer than this many peers
+LND_PEERS_CRIT=1                     # Critical if at or below this (0 peers always critical)
+
+# Active channel count thresholds
+LND_CHANNELS_WARN=3                  # Warn if fewer active channels
+LND_CHANNELS_CRIT=1                  # Critical if at or below this
+LND_CHANNELS_INACTIVE_WARN=2         # Warn if this many or more channels are inactive
+
+# Block height drift thresholds (LND vs Bitcoin Core)
+LND_BLOCKHEIGHT_DRIFT_WARN=3         # Warn if drift exceeds this
+LND_BLOCKHEIGHT_DRIFT_CRIT=10        # Critical if drift exceeds this
+
+# Sync status grace periods (avoid alerts during restarts)
+LND_CHAIN_SYNC_GRACE=300             # Seconds to wait before alerting on chain unsync (5 min)
+LND_GRAPH_SYNC_GRACE=1800            # Seconds before warning on graph unsync (30 min)
+
+# Electrs Monitoring Thresholds
+# ---------------------------
+# Connection settings
+ELECTRS_HOST="127.0.0.1"
+ELECTRS_PORT=50001
+
+# Retry and timeout settings
+ELECTRS_TIMEOUT=15                   # Connection timeout (seconds) - longer for heavy indexing
+ELECTRS_RETRIES=3                    # Number of retry attempts
+ELECTRS_RETRY_DELAY=5                # Seconds between retry attempts
+
+# Block height drift thresholds (Electrs vs Bitcoin Core)
+ELECTRS_DRIFT_WARN=3                 # Warn if drift exceeds this
+ELECTRS_DRIFT_CRIT=10                # Critical if drift exceeds this
+
+# Performance thresholds
+ELECTRS_RESPONSE_TIME_WARN=5000      # Warn if response time exceeds this (milliseconds)
+ELECTRS_RESPONSE_TIME_CRIT=15000     # Critical if response time exceeds this (milliseconds)
+
+# Grace period for transient failures
+ELECTRS_FAILURE_GRACE=300            # Only escalate to CRIT after failing for this many seconds (5 min)
+
+# System Monitoring Thresholds
+# ---------------------------
+# Disk space monitoring
+# Leave DISK_MOUNTS empty to auto-detect all mounted filesystems
+# Or specify mount points as space-separated list: DISK_MOUNTS="/ /mnt/data"
+DISK_MOUNTS=""                       # Auto-detect if empty
+DISK_WARN_PCT=80                     # Warn if disk usage exceeds this percentage
+DISK_CRIT_PCT=90                     # Critical if disk usage exceeds this percentage
+DISK_INODE_WARN_PCT=80               # Warn if inode usage exceeds this percentage
+DISK_INODE_CRIT_PCT=90               # Critical if inode usage exceeds this percentage
+
+# Memory monitoring
+MEMORY_WARN_PCT=85                   # Warn if RAM usage exceeds this percentage
+MEMORY_CRIT_PCT=95                   # Critical if RAM usage exceeds this percentage
+SWAP_WARN_PCT=50                     # Warn if swap usage exceeds this percentage
+SWAP_CRIT_PCT=80                     # Critical if swap usage exceeds this percentage
+
+# Service monitoring
+# Space-separated list of services to monitor
+SERVICES_TO_MONITOR="bitcoind lnd electrs tor"
+SERVICE_CHECK_METHOD="systemd"      # systemd or process (systemd preferred if available)
+
+# Temperature monitoring
+TEMP_WARN_CELSIUS=70                 # Warn if temperature exceeds this
+TEMP_CRIT_CELSIUS=80                 # Critical if temperature exceeds this
+TEMP_CHECK_ENABLED=true              # Set to false to disable temperature checks
+
+# Network connectivity monitoring
+NETWORK_CHECK_HOSTS="8.8.8.8 1.1.1.1"  # Space-separated IPs to ping
+NETWORK_CHECK_DNS="google.com"       # Domain to test DNS resolution
+NETWORK_CHECK_TIMEOUT=5              # Timeout for ping/DNS tests (seconds)
+
+# Tor-only mode enforcement (clearnet leak detection)
+TOR_ONLY_CHECK_ENABLED=false         # Set to true to enable clearnet leak detection
+TOR_SOCKS_PORT=9050                  # Tor SOCKS proxy port (connections to this are OK)
+TOR_CONTROL_PORT=9051                # Tor control port (connections to this are OK)
+# Processes allowed to make clearnet connections (regex pattern)
+TOR_CLEARNET_ALLOWED_PROCESSES="tor|systemd-timesyncd|chronyd|ntpd"
+# Optional: Specific IPs allowed (space-separated, for NTP servers, etc.)
+TOR_CLEARNET_ALLOWED_IPS=""
+
+# Heartbeat / Daily Summary
+HEARTBEAT_INTERVAL="daily"           # daily, weekly, or disabled
+HEARTBEAT_INCLUDE_SYSTEM_STATS=true  # Include uptime, load, memory in heartbeat
+
+# Mempool Health Thresholds
+# ---------------------------
+# Mempool usage (percentage of maxmempool)
+MEMPOOL_USAGE_WARN_HIGH=70     # Warn if usage exceeds 70%
+MEMPOOL_USAGE_CRIT_HIGH=90     # Critical if usage exceeds 90%
+
+# Mempool size (transaction count)
+MEMPOOL_SIZE_WARN_LOW=5        # Warn if mempool has fewer than 5 transactions
+MEMPOOL_SIZE_CRIT_LOW=0        # Critical if mempool is completely empty (with unbroadcast > 0)
+
+# Minimum relay fee elevation (multiplier vs. minrelaytxfee)
+MEMPOOL_MINFEE_MULTIPLIER_WARN=2.0   # Warn if mempoolminfee is 2x minrelaytxfee
+MEMPOOL_MINFEE_MULTIPLIER_CRIT=5.0   # Critical if mempoolminfee is 5x minrelaytxfee
+
+# Unbroadcast transactions (stuck in local mempool)
+MEMPOOL_UNBROADCAST_WARN=10    # Warn if 10+ transactions unbroadcast
+MEMPOOL_UNBROADCAST_CRIT=50    # Critical if 50+ transactions unbroadcast
 
 
 ##############################
@@ -163,20 +303,37 @@ EXPORT_LOCAL_TARGET="/var/www/status.json"
 
 # Only these checks will appear in the public export.
 # All other checks remain private.
+# System checks (400+) and heartbeat (460) are typically kept private.
 PUBLIC_CHECKS=(
+  # Bitcoin Core
   "010-bitcoin-rpc"
-  "020-bitcoin-blockheight"
-  "030-bitcoin-mempool"
-  "040-lnd-wallet"
-  "050-lnd-peers"
-  "060-lnd-channels"
-  "070-lnd-blockheight"
-  "080-lnd-chain-sync"
-  "090-lnd-graph-sync"
-  "100-tor-socks"
-  "110-tor-circuit"
-  "120-tor-onion"
-  "130-electrs-sync"
+  "020-bitcoin-sync-status"
+  "030-bitcoin-blockheight"
+  "040-bitcoin-block-age"
+  
+  # Bitcoin Mempool
+  "050-bitcoin-mempool-usage"
+  "060-bitcoin-mempool-size"
+  "070-bitcoin-mempool-minfee"
+  "080-bitcoin-mempool-unbroadcast"
+  
+  # LND
+  "100-lnd-wallet"
+  "110-lnd-peers"
+  "120-lnd-channels"
+  "130-lnd-blockheight"
+  "140-lnd-chain-sync"
+  "150-lnd-graph-sync"
+  
+  # Tor
+  "200-tor-socks"
+  "210-tor-circuit"
+  "220-tor-onion"
+  
+  # Electrs
+  "300-electrs-connectivity"
+  "310-electrs-sync"
+  "320-electrs-performance"
 )
 
 

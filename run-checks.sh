@@ -6,11 +6,30 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "${SCRIPT_DIR}/helpers.sh"
 
 CHECKS_DIR="${SCRIPT_DIR}/checks.d"
+LOCAL_CHECKS_DIR="${SCRIPT_DIR}/local.d"
 STATE_DIR="${SCRIPT_DIR}/state/check-status"
 
 mkdir -p "${STATE_DIR}"
 
-for check_script in "${CHECKS_DIR}"/*.sh; do
+# Collect all check scripts from both directories and sort them numerically
+all_checks=()
+if [[ -d "${CHECKS_DIR}" ]]; then
+    while IFS= read -r -d $'\0' check; do
+        all_checks+=("$check")
+    done < <(find "${CHECKS_DIR}" -maxdepth 1 -name "*.sh" -type f -print0 2>/dev/null)
+fi
+
+if [[ -d "${LOCAL_CHECKS_DIR}" ]]; then
+    while IFS= read -r -d $'\0' check; do
+        all_checks+=("$check")
+    done < <(find "${LOCAL_CHECKS_DIR}" -maxdepth 1 -name "*.sh" -type f -print0 2>/dev/null)
+fi
+
+# Sort checks numerically by filename
+IFS=$'\n' sorted_checks=($(sort -t/ -k2 -V <<<"${all_checks[*]}"))
+unset IFS
+
+for check_script in "${sorted_checks[@]}"; do
     check_name="$(basename "$check_script")"
 
     # Strip .sh extension if present

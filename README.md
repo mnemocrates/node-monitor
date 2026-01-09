@@ -47,35 +47,400 @@ This design keeps check scripts simple while centralizing alerting and state man
 
 `./run-checks.sh`
 
+## Deployment
+
+For production use, you can deploy node-monitor to a system directory using the provided deployment script.
+
+### Automated Deployment
+
+The `deploy.sh.example` script automates the installation process:
+
+```bash
+# Deploy to default location (/usr/local/node-monitor) with root:root ownership
+sudo bash deploy.sh.example
+
+# Deploy to a custom location
+sudo INSTALL_DIR=/opt/monitoring bash deploy.sh.example
+
+# Deploy with custom ownership (useful for service users)
+sudo OWNER=bitcoin GROUP=bitcoin bash deploy.sh.example
+
+# Combine both options
+sudo INSTALL_DIR=/opt/monitoring OWNER=bitcoin GROUP=bitcoin bash deploy.sh.example
+```
+
+The deployment script will:
+- Create the installation directory if it doesn't exist
+- Copy all scripts, checks, and documentation
+- Preserve existing `config.sh` (won't overwrite)
+- Set appropriate permissions (755 for scripts, 644 for other files)
+- Set ownership to root:root (or your specified user:group)
+- Create necessary subdirectories (`checks.d/`, `state/`)
+
+### Manual Deployment
+
+If you prefer manual deployment:
+
+```bash
+# Create installation directory
+sudo mkdir -p /usr/local/node-monitor
+
+# Copy files
+sudo cp -r checks.d/ /usr/local/node-monitor/
+sudo cp *.sh /usr/local/node-monitor/
+sudo cp config.sh.example /usr/local/node-monitor/
+
+# Set permissions
+sudo chmod 755 /usr/local/node-monitor/*.sh
+sudo chmod 755 /usr/local/node-monitor/checks.d/*.sh
+sudo chown -R root:root /usr/local/node-monitor
+
+# Configure
+sudo cp /usr/local/node-monitor/config.sh.example /usr/local/node-monitor/config.sh
+sudo nano /usr/local/node-monitor/config.sh
+```
+
+### Automated Scheduling
+
+After deployment, set up a cron job to run checks periodically:
+
+```bash
+# Edit crontab
+crontab -e
+
+# Add entry to run every 5 minutes
+*/5 * * * * /usr/local/node-monitor/run-checks.sh
+
+# Or run every 15 minutes
+*/15 * * * * /usr/local/node-monitor/run-checks.sh
+```
+
+For nodecard exports (recommended: daily):
+
+```bash
+# Run once per day at 3 AM
+0 3 * * * /usr/local/node-monitor/export-nodecard.sh
+```
+
 
 ## Directory Structure
 ```
 node-monitor/
-├── checks.d/                 # Modular health checks (010-, 020-, 030-...)
+├── checks.d/                 # Built-in health checks (000-499)
 │   ├── 010-bitcoin-rpc.sh
-│   ├── 020-bitcoin-blockheight.sh
-│   ├── 030-bitcoin-mempool.sh
-│   ├── 040-lnd-wallet.sh
-│   ├── 050-lnd-peers.sh
-│   ├── 060-lnd-channels.sh
-│   ├── 070-lnd-blockheight.sh
-│   ├── 080-lnd-chain-sync.sh
-│   ├── 090-lnd-graph-sync.sh
-│   ├── 100-tor-socks.sh
-│   ├── 110-tor-circuit.sh
-│   ├── 120-tor-onion.sh
-│   ├── 130-electrs-sync.sh
-│   ├── 140-disk-space.sh
-│   └── 150-heartbeat.sh
+│   ├── 020-bitcoin-sync-status.sh
+│   ├── 030-bitcoin-blockheight.sh
+│   ├── 040-bitcoin-block-age.sh
+│   ├── 050-080 bitcoin-mempool-*.sh
+│   ├── 100-150 lnd-*.sh
+│   ├── 200-220 tor-*.sh
+│   ├── 300-320 electrs-*.sh
+│   ├── 400-440 system-*.sh
+│   ├── 450-tor-clearnet-leak.sh
+│   └── 460-heartbeat.sh
+│
+├── local.d/                  # Custom/site-specific checks (500+)
+│   └── README.md             # Documentation for writing custom checks
 │
 ├── helpers.sh                # Shared helper functions (logging, retries, alerts)
-├── run-checks.sh             # Main runner that executes checks.d/ in order
+├── run-checks.sh             # Main runner that executes checks.d/ and local.d/ in order
 ├── test-config.sh            # Validates config.sh and environment
 │
 ├── config.sh.example         # Public-safe template (copy to config.sh)
 ├── .gitignore                # Protects secrets and runtime files
 ├── README.md                 # Project documentation
 └── LICENSE                   # License
+```
+
+## Custom Checks (local.d/)
+
+The `local.d/` directory allows you to add **site-specific custom checks** without interfering with upstream updates. Custom checks should use numbers **500 or higher** to run after all built-in checks.
+
+### Benefits
+- **Upgrade-safe**: Your custom checks won't be overwritten by git pulls
+- **Clean separation**: Built-in checks (000-499) vs custom checks (500+)
+- **Standard pattern**: Follows Unix convention (conf.d, cron.d, etc.)
+
+### Quick Start
+
+1. Create a custom check script in `local.d/`:
+   ```bash
+   nano local.d/500-raid-status.sh
+   ```
+
+2. Follow the standard check format:
+   ```bash
+   #!/usr/bin/env bash
+   set -euo pipefail
+   
+   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+   . "${SCRIPT_DIR}/config.sh"
+   . "${SCRIPT_DIR}/helpers.sh"
+   
+   # Your check logic here
+   
+   echo "OK|RAID array healthy"
+   echo '{"degraded_count": 0}'
+   exit 0
+   ```
+
+3. Make it executable:
+   ```bash
+   chmod +x local.d/500-raid-status.sh
+   ```
+
+4. Test it:
+   ```bash
+   ./run-checks.sh
+   ```
+
+See [local.d/README.md](local.d/README.md) for complete documentation, including:
+- Detailed format requirements
+- Example templates
+- Available helper functions
+- Best practices
+
+## Built-in Checks
+
+The `checks.d/` directory contains 26+ built-in health checks covering Bitcoin Core, LND, Tor, Electrs, and system monitoring. Each check is independently configurable with its own thresholds and behavior settings.
+
+For a **complete check-by-check reference** including what each check does, how it works, and its configuration options, see **[checks.d/README.md](checks.d/README.md)**.
+
+Check categories:
+- **010-040**: Bitcoin Core (RPC, sync, block height, block age)
+- **050-080**: Bitcoin Mempool (usage, size, fees, unbroadcast transactions)
+- **100-150**: LND (wallet, peers, channels, sync status)
+- **200-220**: Tor (SOCKS proxy, circuit health, onion service)
+- **300-320**: Electrs (connectivity, sync status, performance)
+- **400-450**: System & Security (disk, memory, services, temperature, network, Tor-only enforcement)
+- **460**: Heartbeat (daily/weekly summary notifications)
+
+## Configuration Reference
+
+All configuration is done via `config.sh`. Copy `config.sh.example` to `config.sh` and customize for your environment.
+
+### Core Settings
+
+```bash
+NODE_NAME="my-node"                    # Logical name (used in alerts)
+HOSTNAME_SHORT="$(hostname -s)"         # Auto-detected hostname
+```
+
+### Binary Paths
+
+```bash
+BITCOIN_CLI="/usr/local/bin/bitcoin-cli"
+LNCLI="/usr/local/bin/lncli"
+SIGNAL_CLI="/usr/bin/signal-cli"
+CURL_BIN="/usr/bin/curl"
+NC_BIN="/usr/bin/nc"
+JQ_BIN="/usr/bin/jq"
+```
+
+### LND Authentication
+
+```bash
+LND_TLSCERT="/home/user/.lnd/tls.cert"
+LND_MACAROON="/home/user/.lnd/data/chain/bitcoin/mainnet/admin.macaroon"
+```
+
+### Notification Settings
+
+**ntfy (recommended)**:
+```bash
+NTFY_ENABLED=true
+NTFY_USE_TOR=true
+NTFY_TOPIC="https://ntfy.sh/your-topic"
+NTFY_TOKEN=""                          # Optional bearer token
+```
+
+**Email**:
+```bash
+EMAIL_ENABLED=false
+EMAIL_TO="you@example.com"
+EMAIL_FROM="you@example.com"
+SMTP_SERVER="smtp.example.com"
+SMTP_PORT=587
+SMTP_USERNAME="you@example.com"
+SMTP_PASSWORD="your-password"
+```
+
+**Signal**:
+```bash
+SIGNAL_FROM="+15550000000"
+SIGNAL_TO="+15550000000"
+SIGNAL_TO_GROUP="group-id"
+```
+
+### Bitcoin Core Settings
+
+```bash
+BITCOIN_RPC_RETRIES=3                   # Retry attempts for RPC calls
+BITCOIN_RPC_RETRY_DELAY=5               # Seconds between retries
+BITCOIN_RPC_LATENCY_WARN=2000           # Warn if latency > 2s (ms)
+BITCOIN_RPC_LATENCY_CRIT=5000           # Critical if latency > 5s (ms)
+BITCOIN_RPC_FAILURE_GRACE=300           # Grace period before CRIT (seconds)
+
+BITCOIN_VERIFICATION_PROGRESS_WARN=0.9999  # Warn if sync < 99.99%
+
+BITCOIN_BLOCKHEIGHT_DRIFT_WARN=2        # Warn if drift vs external sources > 2 blocks
+BITCOIN_BLOCKHEIGHT_DRIFT_CRIT=5        # Critical if drift > 5 blocks
+BITCOIN_BLOCKHEIGHT_CHECK_RETRIES=3     # Retry attempts for external APIs
+BITCOIN_BLOCKHEIGHT_SOURCES="https://blockstream.info/api/blocks/tip/height,..."
+BITCOIN_BLOCKHEIGHT_USE_TOR=false       # Use Tor for external API calls
+
+BITCOIN_BLOCK_AGE_WARN=1200             # Warn if last block > 20 min (seconds)
+BITCOIN_BLOCK_AGE_CRIT=2400             # Critical if last block > 40 min (seconds)
+```
+
+### Mempool Settings
+
+```bash
+MEMPOOL_USAGE_WARN_HIGH=70              # Warn if usage > 70% of maxmempool
+MEMPOOL_USAGE_CRIT_HIGH=90              # Critical if usage > 90%
+
+MEMPOOL_SIZE_WARN_LOW=5                 # Warn if < 5 transactions
+MEMPOOL_SIZE_CRIT_LOW=0                 # Critical if empty (with unbroadcast > 0)
+
+MEMPOOL_MINFEE_MULTIPLIER_WARN=2.0      # Warn if mempoolminfee is 2x minrelaytxfee
+MEMPOOL_MINFEE_MULTIPLIER_CRIT=5.0      # Critical if 5x minrelaytxfee
+
+MEMPOOL_UNBROADCAST_WARN=10             # Warn if 10+ unbroadcast transactions
+MEMPOOL_UNBROADCAST_CRIT=50             # Critical if 50+ unbroadcast
+```
+
+### LND Settings
+
+```bash
+LND_RPC_RETRIES=3                       # Retry attempts for LND RPC
+LND_RPC_RETRY_DELAY=5                   # Seconds between retries
+
+LND_PEERS_WARN=3                        # Warn if < 3 peers
+LND_PEERS_CRIT=1                        # Critical if ≤ 1 peer
+
+LND_CHANNELS_WARN=3                     # Warn if < 3 active channels
+LND_CHANNELS_CRIT=1                     # Critical if ≤ 1 active channel
+LND_CHANNELS_INACTIVE_WARN=2            # Warn if ≥ 2 inactive channels
+
+LND_BLOCKHEIGHT_DRIFT_WARN=3            # Warn if LND vs Bitcoin drift > 3
+LND_BLOCKHEIGHT_DRIFT_CRIT=10           # Critical if drift > 10
+
+LND_CHAIN_SYNC_GRACE=300                # Grace period for chain sync (5 min)
+LND_GRAPH_SYNC_GRACE=1800               # Grace period for graph sync (30 min)
+```
+
+### Tor Settings
+
+```bash
+TOR_SOCKS_HOST="127.0.0.1"
+TOR_SOCKS_PORT=9050
+TOR_CONTROL_PORT=9051
+
+TOR_CHECK_RETRIES=3                     # Retry attempts for Tor checks
+TOR_CHECK_RETRY_DELAY=10                # Seconds between retries
+TOR_CHECK_TIMEOUT=30                    # Connection timeout (seconds)
+TOR_FAILURE_CRIT_DURATION=900           # Only CRIT after 15 min of failures
+
+# Tor-only mode enforcement
+TOR_ONLY_CHECK_ENABLED=false            # Enable clearnet leak detection
+TOR_CLEARNET_ALLOWED_PROCESSES="tor|systemd-timesyncd|chronyd|ntpd"
+TOR_CLEARNET_ALLOWED_IPS=""            # Optional: allowed IPs
+```
+
+### Electrs Settings
+
+```bash
+ELECTRS_HOST="127.0.0.1"
+ELECTRS_PORT=50001
+
+ELECTRS_TIMEOUT=15                      # Connection timeout (seconds)
+ELECTRS_RETRIES=3                       # Retry attempts
+ELECTRS_RETRY_DELAY=5                   # Seconds between retries
+
+ELECTRS_DRIFT_WARN=3                    # Warn if drift vs Bitcoin > 3 blocks
+ELECTRS_DRIFT_CRIT=10                   # Critical if drift > 10 blocks
+
+ELECTRS_RESPONSE_TIME_WARN=5000         # Warn if response > 5s (ms)
+ELECTRS_RESPONSE_TIME_CRIT=15000        # Critical if response > 15s (ms)
+
+ELECTRS_FAILURE_GRACE=300               # Grace period before CRIT (5 min)
+```
+
+### System Monitoring Settings
+
+```bash
+# Disk space
+DISK_MOUNTS=""                          # Auto-detect if empty
+DISK_WARN_PCT=80                        # Warn if usage > 80%
+DISK_CRIT_PCT=90                        # Critical if usage > 90%
+DISK_INODE_WARN_PCT=80                  # Warn if inode usage > 80%
+DISK_INODE_CRIT_PCT=90                  # Critical if inode usage > 90%
+
+# Memory
+MEMORY_WARN_PCT=85                      # Warn if RAM usage > 85%
+MEMORY_CRIT_PCT=95                      # Critical if RAM usage > 95%
+SWAP_WARN_PCT=50                        # Warn if swap usage > 50%
+SWAP_CRIT_PCT=80                        # Critical if swap usage > 80%
+
+# Services
+SERVICES_TO_MONITOR="bitcoind lnd electrs tor"
+SERVICE_CHECK_METHOD="systemd"         # systemd or process
+
+# Temperature
+TEMP_WARN_CELSIUS=70                    # Warn if temp > 70°C
+TEMP_CRIT_CELSIUS=80                    # Critical if temp > 80°C
+TEMP_CHECK_ENABLED=true                 # Enable/disable check
+
+# Network connectivity
+NETWORK_CHECK_HOSTS="8.8.8.8 1.1.1.1"  # IPs to ping
+NETWORK_CHECK_DNS="google.com"         # Domain for DNS test
+NETWORK_CHECK_TIMEOUT=5                 # Timeout (seconds)
+```
+
+### Heartbeat Settings
+
+```bash
+HEARTBEAT_INTERVAL="daily"              # daily, weekly, or disabled
+HEARTBEAT_INCLUDE_SYSTEM_STATS=true     # Include uptime/load/memory
+```
+
+### Alerting Behavior
+
+```bash
+STATE_DIR="/usr/local/node-monitor/state"
+CHECKS_DIR="/usr/local/node-monitor/checks.d"
+
+ALERT_ON_WARN=true                      # Send alerts for WARN status
+ALERT_COOLDOWN_SECONDS=900              # 15 min cooldown between repeated alerts
+```
+
+### Status Export Settings
+
+```bash
+EXPORT_STATUS=true                      # Enable public status export
+EXPORT_METHOD="scp"                     # scp, local, or none
+EXPORT_TRANSPORT="torsocks"             # ssh or torsocks
+EXPORT_SCP_TARGET="user@host:/path/to/status.json"
+EXPORT_SCP_IDENTITY="${HOME}/.ssh/id_ed25519"
+EXPORT_LOCAL_TARGET="/var/www/status.json"
+
+# Only these checks appear in public export
+PUBLIC_CHECKS=(
+  "010-bitcoin-rpc"
+  "020-bitcoin-blockheight"
+  # ... add checks as needed
+)
+```
+
+### Nodecard Export Settings
+
+```bash
+NODECARD_EXPORT_ENABLED=false           # Enable nodecard export
+NODECARD_EXPORT_METHOD="scp"            # scp, local, or none
+NODECARD_EXPORT_TRANSPORT="torsocks"    # ssh or torsocks
+NODECARD_EXPORT_SCP_TARGET="user@host:/path/to/nodecard.json"
+NODECARD_EXPORT_SCP_IDENTITY="${HOME}/.ssh/id_ed25519"
+NODECARD_EXPORT_LOCAL_TARGET="/var/www/nodecard.json"
 ```
 
 ## JSON State Files

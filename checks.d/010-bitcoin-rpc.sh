@@ -5,23 +5,59 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . "${SCRIPT_DIR}/config.sh"
 . "${SCRIPT_DIR}/helpers.sh"
 
-# Measure latency
-start_ms=$(date +%s%3N)
-if "$BITCOIN_CLI" getblockchaininfo >/dev/null 2>&1; then
-    exit_code=0
-else
-    exit_code=2
+CHECK_NAME="010-bitcoin-rpc"
+
+# Retry logic with latency tracking
+attempt=0
+success=false
+latency_ms=0
+
+while (( attempt < BITCOIN_RPC_RETRIES )); do
+    ((attempt++))
+    
+    # Measure latency
+    start_ms=$(date +%s%3N)
+    if "$BITCOIN_CLI" getblockchaininfo >/dev/null 2>&1; then
+        success=true
+        end_ms=$(date +%s%3N)
+        latency_ms=$(( end_ms - start_ms ))
+        break
+    fi
+    end_ms=$(date +%s%3N)
+    latency_ms=$(( end_ms - start_ms ))
+    
+    # If not last attempt, wait before retry
+    if (( attempt < BITCOIN_RPC_RETRIES )); then
+        sleep "${BITCOIN_RPC_RETRY_DELAY}"
+    fi
+done
+
+metrics_json="{\"responding\": ${success}, \"latency_ms\": ${latency_ms}, \"attempts\": ${attempt}}"
+
+if ! $success; then
+    # Check if failure has persisted beyond grace period
+    if check_failure_duration "$CHECK_NAME" "CRIT" "${BITCOIN_RPC_FAILURE_GRACE}"; then
+        echo "CRIT|Bitcoin Core RPC unreachable persistently (${attempt} attempts)"
+        echo "$metrics_json"
+        exit 2
+    else
+        echo "WARN|Bitcoin Core RPC unreachable (${attempt} attempts, within grace period)"
+        echo "$metrics_json"
+        exit 1
+    fi
 fi
-end_ms=$(date +%s%3N)
 
-latency_ms=$(( end_ms - start_ms ))
-
-if [[ $exit_code -eq 0 ]]; then
-    echo "OK|Bitcoin Core RPC reachable (latency=${latency_ms}ms)"
-    echo "{\"latency_ms\": ${latency_ms}}"
-    exit 0
-else
-    echo "CRIT|Bitcoin Core RPC unreachable"
-    echo "{\"latency_ms\": ${latency_ms}}"
+# RPC is responding - check latency
+if (( latency_ms > BITCOIN_RPC_LATENCY_CRIT )); then
+    echo "CRIT|Bitcoin Core RPC critically slow: ${latency_ms}ms (threshold: ${BITCOIN_RPC_LATENCY_CRIT}ms)"
+    echo "$metrics_json"
     exit 2
+elif (( latency_ms > BITCOIN_RPC_LATENCY_WARN )); then
+    echo "WARN|Bitcoin Core RPC slow: ${latency_ms}ms (threshold: ${BITCOIN_RPC_LATENCY_WARN}ms)"
+    echo "$metrics_json"
+    exit 1
+else
+    echo "OK|Bitcoin Core RPC reachable (${latency_ms}ms, ${attempt} attempt(s))"
+    echo "$metrics_json"
+    exit 0
 fi
