@@ -10,7 +10,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ###############################################
 get_time_ms() {
     # Use seconds * 1000 (portable across all systems)
-    echo $(($(date +%s) * 1000))
+    local seconds
+    seconds=$(date +%s)
+    echo $((seconds * 1000))
 }
 
 ###############################################
