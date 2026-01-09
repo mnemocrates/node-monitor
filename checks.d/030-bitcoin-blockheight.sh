@@ -25,7 +25,7 @@ for source in "${SOURCES[@]}"; do
     attempt=0
     
     while (( attempt < BITCOIN_BLOCKHEIGHT_CHECK_RETRIES )); do
-        ((attempt++))
+        attempt=$((attempt + 1))
         
         # Use Tor if configured
         if [[ "$BITCOIN_BLOCKHEIGHT_USE_TOR" == "true" ]]; then

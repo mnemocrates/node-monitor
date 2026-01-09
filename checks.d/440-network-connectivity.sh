@@ -14,11 +14,11 @@ checks_total=0
 dns_success=false
 dns_time="N/A"
 if [[ -n "${NETWORK_CHECK_DNS}" ]]; then
-    ((checks_total++))
+    checks_total=$((checks_total + 1))
     start_time=$(get_time_ms)
     if timeout "${NETWORK_CHECK_TIMEOUT}" host "${NETWORK_CHECK_DNS}" >/dev/null 2>&1; then
         dns_success=true
-        ((checks_passed++))
+        checks_passed=$((checks_passed + 1))
         end_time=$(get_time_ms)
         dns_time=$((end_time - start_time))
     else
@@ -33,11 +33,11 @@ ping_results=()
 ping_success_count=0
 
 for host in "${ping_hosts[@]}"; do
-    ((checks_total++))
+    checks_total=$((checks_total + 1))
     if timeout "${NETWORK_CHECK_TIMEOUT}" ping -c 1 -W "${NETWORK_CHECK_TIMEOUT}" "$host" >/dev/null 2>&1; then
         ping_results+=("\"${host}\": true")
-        ((ping_success_count++))
-        ((checks_passed++))
+        ping_success_count=$((ping_success_count + 1))
+        checks_passed=$((checks_passed + 1))
     else
         ping_results+=("\"${host}\": false")
         issues+=("Ping failed to ${host}")

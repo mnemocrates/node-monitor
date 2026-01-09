@@ -15,7 +15,7 @@ response_time_ms=0
 server_version=""
 
 while (( attempt < ELECTRS_RETRIES )); do
-    ((attempt++))
+    attempt=$((attempt + 1))
     
     # Measure response time
     start_time=$(get_time_ms)  # milliseconds

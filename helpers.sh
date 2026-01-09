@@ -5,8 +5,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/usr/local/node-monitor/config.sh
 . "${SCRIPT_DIR}/config.sh"
 
-: # noop to ensure sourcing completes
-
 ###############################################
 # Get current time in milliseconds (portable)
 ###############################################
@@ -16,11 +14,6 @@ get_time_ms() {
     seconds=$(date +%s)
     echo $((seconds * 1000))
 }
-
-# Verify function is defined and works
-type get_time_ms >/dev/null 2>&1 || { >&2 echo "ERROR: get_time_ms not defined"; exit 1; }
-_test_time=$(get_time_ms)
-[[ -n "$_test_time" ]] || { >&2 echo "ERROR: get_time_ms returned empty"; exit 1; }
 
 ###############################################
 # Retry helper for Tor/public checks

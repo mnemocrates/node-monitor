@@ -10,7 +10,7 @@ attempt=0
 success=false
 
 while (( attempt < LND_RPC_RETRIES )); do
-    ((attempt++))
+    attempt=$((attempt + 1))
     
     if lncli_safe getinfo >/dev/null 2>&1; then
         success=true
