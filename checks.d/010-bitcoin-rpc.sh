@@ -14,9 +14,12 @@ latency_ms=0
 
 while (( attempt < BITCOIN_RPC_RETRIES )); do
     ((attempt++))
+    >&2 echo "DEBUG: After attempt increment, attempt=$attempt"
     
     # Measure latency (split into steps to avoid nested substitution issues)
+    >&2 echo "DEBUG: About to get start time"
     start_sec=$(date +%s)
+    >&2 echo "DEBUG: Got start_sec=$start_sec"
     start_ms=$((start_sec * 1000))
     
     if "$BITCOIN_CLI" getblockchaininfo >/dev/null 2>&1; then
