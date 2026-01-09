@@ -76,11 +76,11 @@ for check_script in "${sorted_checks[@]}"; do
     # Alerting logic (unchanged)
     if [[ "$status" == "OK" ]]; then
         if [[ "$prev_status" == "WARN" || "$prev_status" == "CRIT" ]]; then
-            send_alert "Recovery: ${check_name}" "${check_name} is now OK on ${NODE_NAME}: ${message}"
+            send_alert "Recovery: ${check_name}" "${check_name} is now OK on ${NODE_NAME}: ${message}" >/dev/null 2>&1
         fi
     else
         if [[ "$prev_status" != "$status" ]]; then
-            send_alert "${status}: ${check_name}" "${check_name} status is ${status} on ${NODE_NAME}: ${message}"
+            send_alert "${status}: ${check_name}" "${check_name} status is ${status} on ${NODE_NAME}: ${message}" >/dev/null 2>&1
         fi
     fi
 
