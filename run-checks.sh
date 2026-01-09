@@ -41,6 +41,14 @@ for check_script in "${sorted_checks[@]}"; do
     output="$("$check_script" 2>&1)"
     exit_code=$?
     set -e
+    
+    # Debug: If no output but non-zero exit, try running with bash -x to see where it fails
+    if [[ -z "$output" ]] && [[ $exit_code -ne 0 ]]; then
+        echo "DEBUG: Check $check_name produced no output but exited with $exit_code" >&2
+        echo "DEBUG: Attempting to run with bash -x for details:" >&2
+        bash -x "$check_script" 2>&1 | head -20 >&2
+        echo "---" >&2
+    fi
 
     # Split output into first line (status|message) and second line (metrics JSON)
     # Use printf instead of echo to avoid issues with strings starting with -
