@@ -189,10 +189,13 @@ get_electrs_info_cached() {
             success=true
             height=$(echo "$electrs_json" | jq -r '.result.height // 0')
             
-            # Try to get server version for additional info
-            server_version=$(printf '{"jsonrpc":"2.0","id":2,"method":"server.version","params":[]}\n' \
+            # Try to get server version for additional info (sanitize output)
+            local version_raw
+            version_raw=$(printf '{"jsonrpc":"2.0","id":2,"method":"server.version","params":[]}\n' \
                 | timeout 5 nc -w 5 "${ELECTRS_HOST}" "${ELECTRS_PORT}" 2>/dev/null \
+                | tr -d '\000-\037' \
                 | jq -r '.result[0] // "unknown"' 2>/dev/null || echo "unknown")
+            server_version="${version_raw:-unknown}"
             
             break
         fi
@@ -203,8 +206,15 @@ get_electrs_info_cached() {
         fi
     done
     
-    # Build cache JSON
-    local cache_json="{\"success\": ${success}, \"height\": ${height}, \"response_time_ms\": ${response_time_ms}, \"server_version\": \"${server_version}\", \"attempts\": ${attempt}}"
+    # Build cache JSON using jq to properly escape all strings
+    local cache_json
+    cache_json=$(jq -n \
+        --argjson success "$success" \
+        --argjson height "$height" \
+        --argjson response_time_ms "$response_time_ms" \
+        --arg server_version "$server_version" \
+        --argjson attempts "$attempt" \
+        '{success: $success, height: $height, response_time_ms: $response_time_ms, server_version: $server_version, attempts: $attempts}')
     
     # Only cache successful responses
     if $success; then
