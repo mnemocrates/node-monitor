@@ -9,11 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Get current time in milliseconds (portable)
 ###############################################
 get_time_ms() {
-    # Try GNU date format, redirect errors and use fallback if it fails
-    local ms
-    ms=$(date +%s%3N 2>/dev/null) && [[ "$ms" =~ ^[0-9]+$ ]] && echo "$ms" && return 0
-    
-    # Fallback: use seconds * 1000 (less precise but portable)
+    # Use seconds * 1000 (portable across all systems)
     echo $(($(date +%s) * 1000))
 }
 
