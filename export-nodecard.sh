@@ -143,8 +143,7 @@ UNSIGNED_DATA=$(jq -n \
       "lnrouter":"https://lnrouter.app/node/\($pubkey)",
       "mempool": "https://mempool.space/lightning/node/\($pubkey)"      
     },
-    "last_updated": $last_updated,
-    "signed_fields": ["alias", "pubkey", "endpoints", "channels", "policy_summary", "last_updated"]
+    "last_updated": $last_updated
   }')
 
 # Write unsigned data to temporary file
@@ -152,16 +151,17 @@ echo "$UNSIGNED_DATA" | jq '.' > "${NODECARD_UNSIGNED}"
 
 # Sign the JSON data
 echo "Signing nodecard with node key..."
-UNSIGNED_COMPACT=$(echo "$UNSIGNED_DATA" | jq -c '.')
-SIGNATURE=$(lncli_safe signmessage "$UNSIGNED_COMPACT" 2>/dev/null | jq -r '.signature // ""')
+# Create compact JSON message to sign (this exact string is what gets signed)
+SIGNED_MESSAGE=$(echo "$UNSIGNED_DATA" | jq -c '.')
+SIGNATURE=$(lncli_safe signmessage "$SIGNED_MESSAGE" 2>/dev/null | jq -r '.signature // ""')
 
 if [[ -z "$SIGNATURE" ]]; then
   echo "Error: Failed to sign nodecard" >&2
   exit 1
 fi
 
-# Create the final signed nodecard
-SIGNED_NODECARD=$(echo "$UNSIGNED_DATA" | jq --arg sig "$SIGNATURE" '. + {signature: $sig}')
+# Create the final signed nodecard with both signature and signed_message
+SIGNED_NODECARD=$(echo "$UNSIGNED_DATA" | jq --arg sig "$SIGNATURE" --arg msg "$SIGNED_MESSAGE" '. + {signature: $sig, signed_message: $msg}')
 
 # Write final signed nodecard
 echo "$SIGNED_NODECARD" | jq '.' > "${NODECARD_FILE}"

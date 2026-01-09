@@ -509,7 +509,12 @@ The nodecard collects and exports:
 
 ### Cryptographic Signing
 
-The entire JSON document is signed using `lncli signmessage` with your node's private key. The signature and a list of signed fields are included in the exported JSON, allowing anyone to verify the authenticity of the data using your node's public key.
+The entire JSON document is signed using `lncli signmessage` with your node's private key. The signature and the exact message that was signed are included in the exported JSON, allowing anyone to verify the authenticity using your node's public key.
+
+**Verification**: Anyone can verify the nodecard by running:
+```bash
+lncli verifymessage <pubkey> <signature> <signed_message>
+```
 
 ### Configuration
 
@@ -566,8 +571,8 @@ Example output file (`nodecard.json`):
     "mempool": "https://mempool.space/lightning/node/02abcdef..."
   },
   "last_updated": "2026-01-04T12:00:00Z",
-  "signed_fields": ["alias", "pubkey", "endpoints", "channels", "policy_summary", "last_updated"],
-  "signature": "3045022100..."
+  "signature": "3045022100...",
+  "signed_message": "{\"alias\":\"MyLightningNode\",\"pubkey\":\"02abcdef...\",\"color\":\"#3399ff\",...}"
 }
 ```
 
