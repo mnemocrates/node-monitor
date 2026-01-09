@@ -6,6 +6,19 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "${SCRIPT_DIR}/config.sh"
 
 ###############################################
+# Get current time in milliseconds (portable)
+###############################################
+get_time_ms() {
+    # Try GNU date with %N (nanoseconds) first
+    if date +%s%3N 2>/dev/null | grep -qE '^[0-9]+$'; then
+        date +%s%3N
+    else
+        # Fallback: use seconds * 1000
+        echo $(($(date +%s) * 1000))
+    fi
+}
+
+###############################################
 # Retry helper for Tor/public checks
 ###############################################
 retry_with_backoff() {
@@ -177,13 +190,13 @@ get_electrs_info_cached() {
         ((attempt++))
         
         # Measure response time
-        local start_time=$(date +%s%3N)  # milliseconds
+        local start_time=$(get_time_ms)  # milliseconds
         
         # Query electrs using blockchain.headers.subscribe
-        electrs_json=$(printf '{"jsonrpc":"2.0","id":1,"method":"blockchain.headers.subscribe","params":[]}\n' \
+        electrs_json=$(printf '{"jsonrpc":"2.0","id":1,"method":"blockchain.headers.subscribe","params":[]\}\n' \
             | timeout "${ELECTRS_TIMEOUT}" nc -w "${ELECTRS_TIMEOUT}" "${ELECTRS_HOST}" "${ELECTRS_PORT}" 2>/dev/null || echo "")
         
-        local end_time=$(date +%s%3N)
+        local end_time=$(get_time_ms)
         response_time_ms=$((end_time - start_time))
         
         # Check if we got a valid response

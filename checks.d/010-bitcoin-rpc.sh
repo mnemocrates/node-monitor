@@ -16,14 +16,14 @@ while (( attempt < BITCOIN_RPC_RETRIES )); do
     ((attempt++))
     
     # Measure latency
-    start_ms=$(date +%s%3N)
+    start_ms=$(get_time_ms)
     if "$BITCOIN_CLI" getblockchaininfo >/dev/null 2>&1; then
         success=true
-        end_ms=$(date +%s%3N)
+        end_ms=$(get_time_ms)
         latency_ms=$(( end_ms - start_ms ))
         break
     fi
-    end_ms=$(date +%s%3N)
+    end_ms=$(get_time_ms)
     latency_ms=$(( end_ms - start_ms ))
     
     # If not last attempt, wait before retry

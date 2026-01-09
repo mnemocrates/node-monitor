@@ -15,11 +15,11 @@ dns_success=false
 dns_time="N/A"
 if [[ -n "${NETWORK_CHECK_DNS}" ]]; then
     ((checks_total++))
-    start_time=$(date +%s%3N)
+    start_time=$(get_time_ms)
     if timeout "${NETWORK_CHECK_TIMEOUT}" host "${NETWORK_CHECK_DNS}" >/dev/null 2>&1; then
         dns_success=true
         ((checks_passed++))
-        end_time=$(date +%s%3N)
+        end_time=$(get_time_ms)
         dns_time=$((end_time - start_time))
     else
         issues+=("DNS resolution failed for ${NETWORK_CHECK_DNS}")
