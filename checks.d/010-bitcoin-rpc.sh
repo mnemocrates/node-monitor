@@ -13,8 +13,9 @@ success=false
 latency_ms=0
 
 while (( attempt < BITCOIN_RPC_RETRIES )); do
-    ((attempt++))
-    >&2 echo "DEBUG: After attempt increment, attempt=$attempt"
+    >&2 echo "DEBUG: Start of loop body, attempt=$attempt"
+    attempt=$((attempt + 1))
+    >&2 echo "DEBUG: After increment, attempt=$attempt"
     
     # Measure latency (split into steps to avoid nested substitution issues)
     >&2 echo "DEBUG: About to get start time"
