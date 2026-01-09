@@ -17,8 +17,10 @@ get_time_ms() {
     echo $((seconds * 1000))
 }
 
-# Verify function is defined
+# Verify function is defined and works
 type get_time_ms >/dev/null 2>&1 || { >&2 echo "ERROR: get_time_ms not defined"; exit 1; }
+_test_time=$(get_time_ms)
+[[ -n "$_test_time" ]] || { >&2 echo "ERROR: get_time_ms returned empty"; exit 1; }
 
 ###############################################
 # Retry helper for Tor/public checks
