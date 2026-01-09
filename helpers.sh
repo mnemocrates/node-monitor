@@ -96,7 +96,9 @@ write_json_state() {
     local timestamp
     timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
-    local json_file="${STATE_DIR}/${check_name}.json"
+    local state_dir="${STATE_DIR}/check-status"
+    mkdir -p "$state_dir"
+    local json_file="${state_dir}/${check_name}.json"
 
     # Build JSON:
     {
@@ -243,7 +245,7 @@ check_failure_duration() {
     # Strip .sh extension if present
     check_name="${check_name%.sh}"
     
-    local state_file="${STATE_DIR}/${check_name}.json"
+    local state_file="${STATE_DIR}/check-status/${check_name}.json"
     local now=$(date +%s)
     
     # If state file doesn't exist, this is first failure

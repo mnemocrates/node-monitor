@@ -7,9 +7,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 CHECKS_DIR="${SCRIPT_DIR}/checks.d"
 LOCAL_CHECKS_DIR="${SCRIPT_DIR}/local.d"
-STATE_DIR="${SCRIPT_DIR}/state/check-status"
+CHECK_STATUS_DIR="${STATE_DIR}/check-status"
 
-mkdir -p "${STATE_DIR}"
+mkdir -p "${CHECK_STATUS_DIR}"
 
 # Collect all check scripts from both directories and sort them numerically
 all_checks=()
@@ -63,7 +63,7 @@ for check_script in "${sorted_checks[@]}"; do
     echo "${status}: ${check_name} - ${message}"
 
     # Read previous JSON state
-    json_file="${STATE_DIR}/${check_name}.json"
+    json_file="${CHECK_STATUS_DIR}/${check_name}.json"
     prev_status="UNKNOWN"
     if [[ -f "$json_file" ]]; then
         prev_status="$(jq -r '.status' "$json_file" 2>/dev/null || echo "UNKNOWN")"
