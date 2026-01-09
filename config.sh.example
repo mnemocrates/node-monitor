@@ -62,6 +62,8 @@ TOR_FAILURE_CRIT_DURATION=900        # Only escalate to CRIT after failing for t
 # Signal Notification (optional)
 ##############################
 
+SIGNAL_ENABLED=false
+
 # Replace with your own values if using signal-cli.
 SIGNAL_FROM="+15550000000"
 SIGNAL_TO="+15550000000"

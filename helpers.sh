@@ -60,9 +60,9 @@ send_alert() {
     local message="$2"
 
     #
-    # Signal (if configured)
+    # Signal (if enabled)
     #
-    if [ -n "${SIGNAL_TO_GROUP:-}" ] || [ -n "${SIGNAL_TO:-}" ]; then
+    if [ "${SIGNAL_ENABLED:-false}" = "true" ]; then
         /usr/local/node-monitor/send-signal.sh "${message}" || true
     fi
 

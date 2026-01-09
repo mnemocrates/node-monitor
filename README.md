@@ -267,6 +267,7 @@ SMTP_PASSWORD="your-password"
 
 **Signal**:
 ```bash
+SIGNAL_ENABLED=false
 SIGNAL_FROM="+15550000000"
 SIGNAL_TO="+15550000000"
 SIGNAL_TO_GROUP="group-id"
