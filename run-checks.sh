@@ -46,7 +46,7 @@ for check_script in "${sorted_checks[@]}"; do
     if [[ -z "$output" ]] && [[ $exit_code -ne 0 ]]; then
         echo "DEBUG: Check $check_name produced no output but exited with $exit_code" >&2
         echo "DEBUG: Attempting to run with bash -x for details:" >&2
-        bash -x "$check_script" 2>&1 | head -20 >&2
+        bash -x "$check_script" 2>&1 | head -50 >&2
         echo "---" >&2
     fi
 
