@@ -36,12 +36,16 @@ for check_script in "${sorted_checks[@]}"; do
     check_name="${check_name%.sh}"
     
     # Run check and capture output + exit code
-    output="$("$check_script" 2>&1 || true)"
+    # Temporarily disable exit-on-error to capture actual exit code
+    set +e
+    output="$("$check_script" 2>&1)"
     exit_code=$?
+    set -e
 
     # Split output into first line (status|message) and second line (metrics JSON)
-    first_line="$(echo "$output" | head -n1)"
-    second_line="$(echo "$output" | sed -n '2p')"
+    # Use printf instead of echo to avoid issues with strings starting with -
+    first_line="$(printf '%s\n' "$output" | head -n1)"
+    second_line="$(printf '%s\n' "$output" | sed -n '2p')"
 
     status="${first_line%%|*}"
     message="${first_line#*|}"
