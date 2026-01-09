@@ -44,11 +44,16 @@ for check_script in "${sorted_checks[@]}"; do
 
     # Split output into first line (status|message) and second line (metrics JSON)
     # Use printf instead of echo to avoid issues with strings starting with -
-    first_line="$(printf '%s\n' "$output" | head -n1)"
-    second_line="$(printf '%s\n' "$output" | sed -n '2p')"
+    first_line="$(printf '%s\n' "$output" | head -n1 | tr -d '\r')"
+    second_line="$(printf '%s\n' "$output" | sed -n '2p' | tr -d '\r')"
 
     status="${first_line%%|*}"
     message="${first_line#*|}"
+    
+    # Debug: log raw output for troubleshooting (temporary)
+    if [[ -z "$message" ]] && [[ "$status" != "OK" ]]; then
+        echo "DEBUG: check=$check_name, first_line='$first_line', output_length=${#output}" >&2
+    fi
 
     # Normalize status from exit code if needed
     case "$exit_code" in
