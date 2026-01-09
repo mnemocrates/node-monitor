@@ -5,6 +5,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/usr/local/node-monitor/config.sh
 . "${SCRIPT_DIR}/config.sh"
 
+: # noop to ensure sourcing completes
+
 ###############################################
 # Get current time in milliseconds (portable)
 ###############################################
