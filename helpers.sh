@@ -9,11 +9,15 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Get current time in milliseconds (portable)
 ###############################################
 get_time_ms() {
-    # Try GNU date with %N (nanoseconds) first
-    if date +%s%3N 2>/dev/null | grep -qE '^[0-9]+$'; then
-        date +%s%3N
+    # Try GNU date with %3N (milliseconds) - check if it produces valid numeric output
+    local test_output
+    test_output=$(date +%s%3N 2>/dev/null || echo "fail")
+    
+    if [[ "$test_output" =~ ^[0-9]+$ ]]; then
+        # GNU date with millisecond support available
+        echo "$test_output"
     else
-        # Fallback: use seconds * 1000
+        # Fallback: use seconds * 1000 (less precise but portable)
         echo $(($(date +%s) * 1000))
     fi
 }
