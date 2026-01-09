@@ -5,14 +5,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/usr/local/node-monitor/config.sh
 . "${SCRIPT_DIR}/config.sh"
 
-# Debug: confirm helpers.sh is being sourced
->&2 echo "DEBUG: helpers.sh sourced successfully"
-
 ###############################################
 # Get current time in milliseconds (portable)
 ###############################################
 get_time_ms() {
-    >&2 echo "DEBUG: get_time_ms called"
     # Use seconds * 1000 (portable across all systems)
     echo $(($(date +%s) * 1000))
 }
