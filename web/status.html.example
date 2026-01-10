@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Node Monitor Status</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            padding: 2rem 1rem;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        header {
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 1rem;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .meta {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .summary-card {
+            padding: 1.5rem;
+            border-radius: 6px;
+            text-align: center;
+        }
+        
+        .summary-card.ok {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .summary-card.warn {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .summary-card.crit {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .summary-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+        
+        .summary-label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .checks-section {
+            margin-top: 2rem;
+        }
+        
+        .section-title {
+            font-size: 1.25rem;
+            margin: 2rem 0 1rem 0;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        
+        .check-grid {
+            display: grid;
+            gap: 0.75rem;
+        }
+        
+        .check-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            background: #fafafa;
+            transition: all 0.2s;
+        }
+        
+        .check-item:hover {
+            background: #f0f0f0;
+            border-color: #d0d0d0;
+        }
+        
+        .check-status {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 1rem;
+            flex-shrink: 0;
+        }
+        
+        .check-status.ok {
+            background: #28a745;
+        }
+        
+        .check-status.warn {
+            background: #ffc107;
+        }
+        
+        .check-status.crit {
+            background: #dc3545;
+        }
+        
+        .check-name {
+            font-weight: 600;
+            min-width: 200px;
+            color: #333;
+        }
+        
+        .check-message {
+            flex: 1;
+            color: #666;
+        }
+        
+        .check-updated {
+            font-size: 0.85rem;
+            color: #999;
+            margin-left: 1rem;
+        }
+        
+        .loading, .error {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+        
+        .error {
+            color: #dc3545;
+        }
+        
+        .last-updated {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e0e0e0;
+            color: #999;
+            font-size: 0.85rem;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem 0.5rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .check-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .check-name {
+                min-width: auto;
+            }
+            
+            .check-updated {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Node Monitor Status</h1>
+            <div class="meta">
+                <span id="node-name">Loading...</span> • 
+                <span id="hostname">...</span>
+            </div>
+        </header>
+        
+        <div class="summary" id="summary">
+            <div class="summary-card ok">
+                <div class="summary-number" id="ok-count">-</div>
+                <div class="summary-label">OK</div>
+            </div>
+            <div class="summary-card warn">
+                <div class="summary-number" id="warn-count">-</div>
+                <div class="summary-label">Warnings</div>
+            </div>
+            <div class="summary-card crit">
+                <div class="summary-number" id="crit-count">-</div>
+                <div class="summary-label">Critical</div>
+            </div>
+        </div>
+        
+        <div class="checks-section" id="checks-container">
+            <div class="loading">Loading status data...</div>
+        </div>
+        
+        <div class="last-updated">
+            Last updated: <span id="last-update">-</span>
+        </div>
+    </div>
+    
+    <script>
+        // Configuration - Update this URL to point to your status.json
+        const JSON_URL = 'https://your-domain.com/path/to/status.json';
+        const REFRESH_INTERVAL = 30000; // 30 seconds
+        
+        // Category groupings for organizing checks
+        const CATEGORIES = {
+            'Bitcoin': ['bitcoin_rpc', 'bitcoin_sync_status', 'bitcoin_blockheight', 'bitcoin_block_age', 
+                       'bitcoin_mempool_usage', 'bitcoin_mempool_size', 'bitcoin_mempool_minfee', 'bitcoin_mempool_unbroadcast'],
+            'LND': ['lnd_wallet', 'lnd_peers', 'lnd_channels', 'lnd_blockheight', 'lnd_chain_sync', 'lnd_graph_sync'],
+            'Tor': ['tor_socks', 'tor_circuit', 'tor_onion', 'tor_clearnet_leak'],
+            'Electrs': ['electrs_connectivity', 'electrs_sync', 'electrs_performance'],
+            'System': ['disk_space', 'memory_usage', 'service_status', 'temperature', 'network_connectivity', 'heartbeat']
+        };
+        
+        async function fetchStatus() {
+            try {
+                const response = await fetch(JSON_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                const data = await response.json();
+                updateDisplay(data);
+            } catch (error) {
+                showError(`Failed to load status: ${error.message}`);
+            }
+        }
+        
+        function updateDisplay(data) {
+            // Update header
+            document.getElementById('node-name').textContent = data.node || 'Unknown Node';
+            document.getElementById('hostname').textContent = data.hostname || 'unknown';
+            document.getElementById('last-update').textContent = formatTimestamp(data.timestamp);
+            
+            // Count statuses
+            const counts = { ok: 0, warn: 0, crit: 0 };
+            Object.values(data.checks || {}).forEach(check => {
+                const status = (check.status || 'OK').toLowerCase();
+                if (counts.hasOwnProperty(status)) {
+                    counts[status]++;
+                }
+            });
+            
+            document.getElementById('ok-count').textContent = counts.ok;
+            document.getElementById('warn-count').textContent = counts.warn;
+            document.getElementById('crit-count').textContent = counts.crit;
+            
+            // Display checks by category
+            const container = document.getElementById('checks-container');
+            container.innerHTML = '';
+            
+            for (const [category, checkNames] of Object.entries(CATEGORIES)) {
+                const categoryChecks = checkNames
+                    .map(name => ({ name, data: data.checks[name] }))
+                    .filter(item => item.data);
+                
+                if (categoryChecks.length === 0) continue;
+                
+                const section = document.createElement('div');
+                
+                const title = document.createElement('h2');
+                title.className = 'section-title';
+                title.textContent = category;
+                section.appendChild(title);
+                
+                const grid = document.createElement('div');
+                grid.className = 'check-grid';
+                
+                categoryChecks.forEach(({ name, data }) => {
+                    const item = createCheckItem(name, data);
+                    grid.appendChild(item);
+                });
+                
+                section.appendChild(grid);
+                container.appendChild(section);
+            }
+        }
+        
+        function createCheckItem(name, check) {
+            const item = document.createElement('div');
+            item.className = 'check-item';
+            
+            const status = (check.status || 'OK').toLowerCase();
+            
+            const statusDot = document.createElement('div');
+            statusDot.className = `check-status ${status}`;
+            
+            const nameSpan = document.createElement('div');
+            nameSpan.className = 'check-name';
+            nameSpan.textContent = formatCheckName(name);
+            
+            const messageSpan = document.createElement('div');
+            messageSpan.className = 'check-message';
+            messageSpan.textContent = check.message || 'No message';
+            
+            const updatedSpan = document.createElement('div');
+            updatedSpan.className = 'check-updated';
+            updatedSpan.textContent = formatTimestamp(check.updated, true);
+            
+            item.appendChild(statusDot);
+            item.appendChild(nameSpan);
+            item.appendChild(messageSpan);
+            item.appendChild(updatedSpan);
+            
+            return item;
+        }
+        
+        function formatCheckName(name) {
+            return name
+                .split('_')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+        }
+        
+        function formatTimestamp(timestamp, short = false) {
+            if (!timestamp) return 'N/A';
+            
+            const date = new Date(timestamp);
+            if (isNaN(date.getTime())) return timestamp;
+            
+            if (short) {
+                return date.toLocaleTimeString();
+            }
+            
+            return date.toLocaleString();
+        }
+        
+        function showError(message) {
+            const container = document.getElementById('checks-container');
+            container.innerHTML = `<div class="error">${message}</div>`;
+        }
+        
+        // Initial fetch
+        fetchStatus();
+        
+        // Auto-refresh
+        setInterval(fetchStatus, REFRESH_INTERVAL);
+    </script>
+</body>
+</html>

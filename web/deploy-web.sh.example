@@ -1,0 +1,199 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Deploy web HTML files to remote server
+# This script reads configuration from config.sh
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "${SCRIPT_DIR}/config.sh"
+
+# Check if web deployment is enabled
+if [[ "${WEB_DEPLOY_ENABLED:-false}" != "true" ]]; then
+    echo "Web deployment is disabled (WEB_DEPLOY_ENABLED=false)"
+    exit 0
+fi
+
+# Default configuration values
+WEB_DEPLOY_METHOD="${WEB_DEPLOY_METHOD:-scp}"
+WEB_DEPLOY_TRANSPORT="${WEB_DEPLOY_TRANSPORT:-direct}"
+WEB_STATUS_SOURCE="${WEB_STATUS_SOURCE:-${SCRIPT_DIR}/web/status.html}"
+WEB_NODECARD_SOURCE="${WEB_NODECARD_SOURCE:-${SCRIPT_DIR}/web/nodecard.html}"
+WEB_DEPLOY_SCP_IDENTITY="${WEB_DEPLOY_SCP_IDENTITY:-${HOME}/.ssh/id_ed25519}"
+
+# Parse command line arguments
+DRY_RUN=false
+DEPLOY_STATUS=true
+DEPLOY_NODECARD=true
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --dry-run)
+            DRY_RUN=true
+            shift
+            ;;
+        --status-only)
+            DEPLOY_NODECARD=false
+            shift
+            ;;
+        --nodecard-only)
+            DEPLOY_STATUS=false
+            shift
+            ;;
+        --help)
+            echo "Usage: $0 [OPTIONS]"
+            echo ""
+            echo "Deploy web HTML files to remote server."
+            echo ""
+            echo "Options:"
+            echo "  --dry-run          Show what would be deployed without actually deploying"
+            echo "  --status-only      Deploy only status.html"
+            echo "  --nodecard-only    Deploy only nodecard.html"
+            echo "  --help             Show this help message"
+            echo ""
+            echo "Configuration is read from config.sh. Required settings:"
+            echo "  WEB_DEPLOY_ENABLED         Enable/disable web deployment"
+            echo "  WEB_DEPLOY_METHOD          Deployment method (scp or rsync)"
+            echo "  WEB_DEPLOY_TRANSPORT       Transport method (direct or torsocks)"
+            echo "  WEB_STATUS_SOURCE          Path to status.html file"
+            echo "  WEB_STATUS_TARGET          Deployment target for status page"
+            echo "  WEB_NODECARD_SOURCE        Path to nodecard.html file"
+            echo "  WEB_NODECARD_TARGET        Deployment target for nodecard page"
+            echo "  WEB_DEPLOY_SCP_IDENTITY    SSH key for authentication"
+            echo ""
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
+
+# Validate configuration
+if [[ "$DEPLOY_STATUS" == "true" ]]; then
+    if [[ -z "${WEB_STATUS_TARGET:-}" ]]; then
+        echo "ERROR: WEB_STATUS_TARGET not configured in config.sh"
+        exit 1
+    fi
+    if [[ ! -f "$WEB_STATUS_SOURCE" ]]; then
+        echo "ERROR: Status HTML file not found: $WEB_STATUS_SOURCE"
+        echo "Copy web/status.html.example to web/status.html and customize it"
+        exit 1
+    fi
+fi
+
+if [[ "$DEPLOY_NODECARD" == "true" ]]; then
+    if [[ -z "${WEB_NODECARD_TARGET:-}" ]]; then
+        echo "ERROR: WEB_NODECARD_TARGET not configured in config.sh"
+        exit 1
+    fi
+    if [[ ! -f "$WEB_NODECARD_SOURCE" ]]; then
+        echo "ERROR: Nodecard HTML file not found: $WEB_NODECARD_SOURCE"
+        echo "Copy web/nodecard.html.example to web/nodecard.html and customize it"
+        exit 1
+    fi
+fi
+
+# Build deployment command based on method and transport
+build_deploy_command() {
+    local source="$1"
+    local target="$2"
+    local cmd=""
+    
+    # Add transport wrapper if needed
+    if [[ "$WEB_DEPLOY_TRANSPORT" == "torsocks" ]]; then
+        if [[ ! -x "${TORSOCKS_BIN}" ]]; then
+            echo "ERROR: torsocks binary not found or not executable: ${TORSOCKS_BIN}"
+            exit 1
+        fi
+        cmd="${TORSOCKS_BIN} "
+    fi
+    
+    # Add deployment method
+    case "$WEB_DEPLOY_METHOD" in
+        scp)
+            cmd="${cmd}scp -i \"${WEB_DEPLOY_SCP_IDENTITY}\" -q \"${source}\" \"${target}\""
+            ;;
+        rsync)
+            cmd="${cmd}rsync -avz -e \"ssh -i ${WEB_DEPLOY_SCP_IDENTITY}\" \"${source}\" \"${target}\""
+            ;;
+        *)
+            echo "ERROR: Unknown deployment method: $WEB_DEPLOY_METHOD"
+            exit 1
+            ;;
+    esac
+    
+    echo "$cmd"
+}
+
+# Deploy function
+deploy_file() {
+    local name="$1"
+    local source="$2"
+    local target="$3"
+    
+    echo "Deploying $name..."
+    echo "  Source: $source"
+    echo "  Target: $target"
+    
+    if [[ "$DRY_RUN" == "true" ]]; then
+        echo "  [DRY RUN] Would execute: $(build_deploy_command "$source" "$target")"
+        return 0
+    fi
+    
+    local cmd
+    cmd=$(build_deploy_command "$source" "$target")
+    
+    if eval "$cmd"; then
+        echo "  ✓ Successfully deployed $name"
+        return 0
+    else
+        echo "  ✗ Failed to deploy $name"
+        return 1
+    fi
+}
+
+# Main deployment
+echo "========================================"
+echo "Web Deployment"
+echo "========================================"
+echo "Method: $WEB_DEPLOY_METHOD"
+echo "Transport: $WEB_DEPLOY_TRANSPORT"
+if [[ "$DRY_RUN" == "true" ]]; then
+    echo "Mode: DRY RUN (no files will be transferred)"
+fi
+echo "========================================"
+echo ""
+
+FAILED=0
+
+# Deploy status page
+if [[ "$DEPLOY_STATUS" == "true" ]]; then
+    if ! deploy_file "status page" "$WEB_STATUS_SOURCE" "$WEB_STATUS_TARGET"; then
+        FAILED=$((FAILED + 1))
+    fi
+    echo ""
+fi
+
+# Deploy nodecard page
+if [[ "$DEPLOY_NODECARD" == "true" ]]; then
+    if ! deploy_file "nodecard page" "$WEB_NODECARD_SOURCE" "$WEB_NODECARD_TARGET"; then
+        FAILED=$((FAILED + 1))
+    fi
+    echo ""
+fi
+
+# Summary
+echo "========================================"
+if [[ "$DRY_RUN" == "true" ]]; then
+    echo "Dry run complete. No files were transferred."
+elif [[ $FAILED -eq 0 ]]; then
+    echo "✓ All deployments completed successfully"
+else
+    echo "✗ $FAILED deployment(s) failed"
+    exit 1
+fi
+echo "========================================"
+
+exit 0

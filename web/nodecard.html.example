@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lightning Node Card</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2rem 1rem;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        .card-header {
+            padding: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+        }
+        
+        .node-alias {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            word-break: break-word;
+        }
+        
+        .node-version {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .color-indicator {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin: 1rem auto;
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .card-body {
+            padding: 2rem;
+        }
+        
+        .info-section {
+            margin-bottom: 2rem;
+        }
+        
+        .info-section:last-child {
+            margin-bottom: 0;
+        }
+        
+        .section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #999;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .pubkey {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            word-break: break-all;
+            padding: 1rem;
+            background: #f5f5f5;
+            border-radius: 6px;
+            color: #555;
+            line-height: 1.6;
+        }
+        
+        .uri-list {
+            list-style: none;
+        }
+        
+        .uri-item {
+            padding: 0.75rem;
+            background: #f5f5f5;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            word-break: break-all;
+            color: #555;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+        }
+        
+        .stat-card {
+            text-align: center;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .capabilities {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        
+        .capability-badge {
+            padding: 0.5rem 0.75rem;
+            background: #e7f0ff;
+            color: #667eea;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .sync-status {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+        
+        .sync-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .sync-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        
+        .sync-dot.synced {
+            background: #28a745;
+        }
+        
+        .sync-dot.syncing {
+            background: #ffc107;
+        }
+        
+        .loading, .error {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: #666;
+        }
+        
+        .error {
+            color: #dc3545;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 1rem;
+            background: #f8f9fa;
+            color: #999;
+            font-size: 0.8rem;
+        }
+        
+        @media (max-width: 640px) {
+            body {
+                padding: 1rem 0.5rem;
+            }
+            
+            .node-alias {
+                font-size: 1.5rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="card" id="card-container">
+        <div class="loading">Loading node information...</div>
+    </div>
+    
+    <script>
+        // Configuration - Update this URL to point to your nodecard.json
+        const JSON_URL = 'https://your-domain.com/path/to/nodecard.json';
+        
+        async function fetchNodeCard() {
+            try {
+                const response = await fetch(JSON_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                const data = await response.json();
+                displayNodeCard(data);
+            } catch (error) {
+                showError(`Failed to load node card: ${error.message}`);
+            }
+        }
+        
+        function displayNodeCard(data) {
+            const container = document.getElementById('card-container');
+            container.innerHTML = '';
+            
+            // Header
+            const header = document.createElement('div');
+            header.className = 'card-header';
+            header.innerHTML = `
+                <div class="node-alias">${escapeHtml(data.alias || 'Unknown Node')}</div>
+                <div class="node-version">LND ${escapeHtml(data.version || 'unknown')}</div>
+                <div class="color-indicator" style="background-color: ${escapeHtml(data.color || '#000000')}"></div>
+            `;
+            container.appendChild(header);
+            
+            // Body
+            const body = document.createElement('div');
+            body.className = 'card-body';
+            
+            // Sync Status
+            if (data.sync_to_chain !== undefined || data.sync_to_graph !== undefined) {
+                const syncSection = document.createElement('div');
+                syncSection.className = 'info-section';
+                syncSection.innerHTML = `
+                    <div class="sync-status">
+                        <div class="sync-indicator">
+                            <div class="sync-dot ${data.sync_to_chain ? 'synced' : 'syncing'}"></div>
+                            <span>${data.sync_to_chain ? 'Chain Synced' : 'Syncing Chain'}</span>
+                        </div>
+                        <div class="sync-indicator">
+                            <div class="sync-dot ${data.sync_to_graph ? 'synced' : 'syncing'}"></div>
+                            <span>${data.sync_to_graph ? 'Graph Synced' : 'Syncing Graph'}</span>
+                        </div>
+                    </div>
+                `;
+                body.appendChild(syncSection);
+            }
+            
+            // Statistics
+            const statsSection = document.createElement('div');
+            statsSection.className = 'info-section';
+            statsSection.innerHTML = `
+                <div class="section-title">Statistics</div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">${formatNumber(data.num_active_channels || 0)}</div>
+                        <div class="stat-label">Channels</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${formatNumber(data.num_peers || 0)}</div>
+                        <div class="stat-label">Peers</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${formatBTC(data.total_capacity_sat || 0)}</div>
+                        <div class="stat-label">Capacity</div>
+                    </div>
+                </div>
+            `;
+            body.appendChild(statsSection);
+            
+            // Public Key
+            const pubkeySection = document.createElement('div');
+            pubkeySection.className = 'info-section';
+            pubkeySection.innerHTML = `
+                <div class="section-title">Public Key</div>
+                <div class="pubkey">${escapeHtml(data.pubkey || 'Not available')}</div>
+            `;
+            body.appendChild(pubkeySection);
+            
+            // Connection URIs
+            if (data.uris && data.uris.length > 0) {
+                const urisSection = document.createElement('div');
+                urisSection.className = 'info-section';
+                const urisList = data.uris.map(uri => 
+                    `<li class="uri-item">${escapeHtml(uri)}</li>`
+                ).join('');
+                urisSection.innerHTML = `
+                    <div class="section-title">Connection URIs</div>
+                    <ul class="uri-list">${urisList}</ul>
+                `;
+                body.appendChild(urisSection);
+            }
+            
+            // Capabilities
+            if (data.capabilities && data.capabilities.length > 0) {
+                const capsSection = document.createElement('div');
+                capsSection.className = 'info-section';
+                const capsBadges = data.capabilities.map(cap => 
+                    `<span class="capability-badge">${escapeHtml(cap)}</span>`
+                ).join('');
+                capsSection.innerHTML = `
+                    <div class="section-title">Capabilities</div>
+                    <div class="capabilities">${capsBadges}</div>
+                `;
+                body.appendChild(capsSection);
+            }
+            
+            container.appendChild(body);
+            
+            // Footer
+            const footer = document.createElement('div');
+            footer.className = 'footer';
+            footer.innerHTML = `
+                ${escapeHtml(data.network || 'mainnet')} • 
+                Updated ${formatTimestamp(data.timestamp)}
+            `;
+            container.appendChild(footer);
+        }
+        
+        function formatBTC(satoshis) {
+            const btc = satoshis / 100000000;
+            if (btc >= 1) {
+                return btc.toFixed(2) + ' BTC';
+            }
+            return (btc * 1000).toFixed(0) + ' mBTC';
+        }
+        
+        function formatNumber(num) {
+            return num.toLocaleString();
+        }
+        
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return 'Unknown';
+            const date = new Date(timestamp);
+            if (isNaN(date.getTime())) return timestamp;
+            return date.toLocaleString();
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function showError(message) {
+            const container = document.getElementById('card-container');
+            container.innerHTML = `<div class="error">${escapeHtml(message)}</div>`;
+        }
+        
+        // Load node card
+        fetchNodeCard();
+    </script>
+</body>
+</html>
