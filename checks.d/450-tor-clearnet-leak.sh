@@ -149,11 +149,10 @@ fi
 if [[ $new_leak_count -gt 0 ]]; then
     # NEW clearnet leak detected
     leak_details=$(echo "$new_leaks" | grep -v '^$' | while IFS='|' read -r dest proc; do
-        echo "  - ${proc:-unknown} → $dest"
-    done)
+        echo "${proc:-unknown} → $dest"
+    done | paste -sd ', ' -)
     
-    echo "CRIT|NEW clearnet leak detected (${new_leak_count} new, ${leak_count} total)"
-    echo "$leak_details" >&2  # Send details to stderr for logging
+    echo "CRIT|NEW clearnet leak: ${leak_details} (${new_leak_count} new, ${leak_count} total)"
     echo "{\"status\": \"leak\", \"total_leaks\": $leak_count, \"new_leaks\": $new_leak_count, \"connections\": $leak_list}"
     
     # Update state with current leaks
@@ -165,7 +164,16 @@ if [[ $new_leak_count -gt 0 ]]; then
     exit 2
 elif [[ $leak_count -gt 0 ]]; then
     # Known leaks, but no new ones
-    echo "WARN|Clearnet leak ongoing (${leak_count} known connections, 0 new)"
+    leak_summary=$(echo "$current_leaks" | grep -v '^$' | while IFS='|' read -r dest proc; do
+        echo "${proc:-unknown} → $dest"
+    done | head -3 | paste -sd ', ' -)
+    
+    more_text=""
+    if [[ $leak_count -gt 3 ]]; then
+        more_text=" and $((leak_count - 3)) more"
+    fi
+    
+    echo "WARN|Clearnet leak ongoing: ${leak_summary}${more_text} (${leak_count} known)"
     echo "{\"status\": \"known_leak\", \"total_leaks\": $leak_count, \"new_leaks\": 0, \"connections\": $leak_list}"
     exit 1
 else
