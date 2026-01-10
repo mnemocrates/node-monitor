@@ -183,15 +183,22 @@ get_electrs_info_cached() {
     local server_version=""
     local height=0
     
-    while (( attempt < ELECTRS_RETRIES )); do
+    # Use defaults if variables are not set
+    local retries="${ELECTRS_RETRIES:-3}"
+    local timeout="${ELECTRS_TIMEOUT:-15}"
+    local retry_delay="${ELECTRS_RETRY_DELAY:-5}"
+    local host="${ELECTRS_HOST:-127.0.0.1}"
+    local port="${ELECTRS_PORT:-50001}"
+    
+    while (( attempt < retries )); do
         ((attempt++))
         
         # Measure response time
         local start_time=$(get_time_ms)  # milliseconds
         
         # Query electrs using blockchain.headers.subscribe
-        electrs_json=$(printf '{"jsonrpc":"2.0","id":1,"method":"blockchain.headers.subscribe","params":[]\}\n' \
-            | timeout "${ELECTRS_TIMEOUT}" nc -w "${ELECTRS_TIMEOUT}" "${ELECTRS_HOST}" "${ELECTRS_PORT}" 2>/dev/null || echo "")
+        electrs_json=$(printf '{"jsonrpc":"2.0","id":1,"method":"blockchain.headers.subscribe","params":[]}\n' \
+            | timeout "${timeout}" nc -w "${timeout}" "${host}" "${port}" 2>/dev/null || echo "")
         
         local end_time=$(get_time_ms)
         response_time_ms=$((end_time - start_time))
@@ -204,7 +211,7 @@ get_electrs_info_cached() {
             # Try to get server version for additional info (sanitize output)
             local version_raw
             version_raw=$(printf '{"jsonrpc":"2.0","id":2,"method":"server.version","params":[]}\n' \
-                | timeout 5 nc -w 5 "${ELECTRS_HOST}" "${ELECTRS_PORT}" 2>/dev/null \
+                | timeout 5 nc -w 5 "${host}" "${port}" 2>/dev/null \
                 | tr -d '\000-\037' \
                 | jq -r '.result[0] // "unknown"' 2>/dev/null || echo "unknown")
             server_version="${version_raw:-unknown}"
@@ -213,8 +220,8 @@ get_electrs_info_cached() {
         fi
         
         # If not last attempt, wait before retry
-        if (( attempt < ELECTRS_RETRIES )); then
-            sleep "${ELECTRS_RETRY_DELAY}"
+        if (( attempt < retries )); then
+            sleep "${retry_delay}"
         fi
     done
     

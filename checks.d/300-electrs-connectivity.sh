@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . "${SCRIPT_DIR}/config.sh"
 . "${SCRIPT_DIR}/helpers.sh"
 
-CHECK_NAME="130-electrs-connectivity"
+CHECK_NAME="300-electrs-connectivity"
 
 # Get electrs info (cached)
 electrs_info=$(get_electrs_info_cached) || electrs_info='{"success": false}'
