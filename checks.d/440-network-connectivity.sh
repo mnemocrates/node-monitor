@@ -49,9 +49,10 @@ if [[ "$dns_success" == false ]] || (( ping_success_count == 0 )); then
     severity="CRIT"
 elif (( ping_success_count < ${#ping_hosts[@]} / 2 )); then
     # Less than half of pings succeeded
-    if [[ "$severity" != "CRIT" ]]; then
-        severity="WARN"
-    fi
+    severity="WARN"
+elif (( ping_success_count < ${#ping_hosts[@]} )); then
+    # Some pings failed, but more than half succeeded
+    severity="WARN"
 fi
 
 # Test 3: Check default route
