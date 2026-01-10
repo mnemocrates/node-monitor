@@ -19,7 +19,7 @@ server_version=$(echo "$electrs_info" | jq -r '.server_version // "unknown"')
 metrics_json="{\"responding\": ${success}, \"attempts\": ${attempts}, \"response_time_ms\": ${response_time_ms}, \"server_version\": \"${server_version}\"}"
 
 if [[ "$success" == "true" ]]; then
-    echo "OK|Electrs responding (${response_time_ms}ms, ${attempts} attempt(s), v${server_version})"
+    echo "OK|Electrs responding (${response_time_ms}ms, ${attempts} attempt(s), ${server_version})"
     echo "$metrics_json"
     exit 0
 else
