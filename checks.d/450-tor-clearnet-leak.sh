@@ -13,10 +13,14 @@ if [[ "${TOR_ONLY_CHECK_ENABLED:-false}" != "true" ]]; then
 fi
 
 # Check if running with sufficient privileges
-if [[ $EUID -ne 0 ]] && ! ss -tunp &>/dev/null; then
-    echo "WARN|Insufficient privileges to check for clearnet leaks (requires root)"
-    echo '{"has_privileges": false, "recommendation": "Run node-monitor as root or configure sudo"}'
-    exit 1
+if [[ $EUID -ne 0 ]]; then
+    # Test if we can actually get process info
+    test_output=$(ss -tunp 2>/dev/null | head -5)
+    if ! echo "$test_output" | grep -q "users:"; then
+        echo "WARN|Insufficient privileges to check for clearnet leaks (requires root or CAP_NET_ADMIN)"
+        echo '{"has_privileges": false, "recommendation": "Run node-monitor as root or configure sudo/capabilities"}'
+        exit 1
+    fi
 fi
 
 # State file for tracking known connections
@@ -38,30 +42,36 @@ get_clearnet_connections() {
         exit 2
     fi
     
-    # Parse connections
+    # Parse connections - save full line for better process extraction
     echo "$output" | awk '
         /^(tcp|udp)/ && /ESTAB|ESTABLISHED/ {
-            # Extract destination IP:port
+            # Extract destination IP:port (could be field 5 or 6 depending on format)
+            dest = ""
             if ($5 ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$/) {
                 dest = $5
             } else if ($6 ~ /^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$/) {
                 dest = $6
-            } else {
-                next
             }
             
-            # Extract process info (varies by tool)
+            if (dest == "") next
+            
+            # Extract process info from entire line
             process = ""
-            for (i=1; i<=NF; i++) {
-                if ($i ~ /users:\(\(/ || $i ~ /^[0-9]+\//) {
-                    process = $i
-                    break
-                }
+            
+            # Try to match users:((process,pid,fd)) format (ss output)
+            if (match($0, /users:\(\(\"?([^,\"]+)\"?,/, arr)) {
+                process = arr[1]
+            }
+            # Try to match pid/process format (netstat output)
+            else if (match($0, /[[:space:]]([0-9]+)\/([^[:space:]]+)/, arr)) {
+                process = arr[2]
+            }
+            # Try last field if it looks like process info
+            else if ($NF ~ /[a-zA-Z]/) {
+                process = $NF
             }
             
-            if (dest != "") {
-                print dest "|" process
-            }
+            print dest "|" process
         }
     '
 }
