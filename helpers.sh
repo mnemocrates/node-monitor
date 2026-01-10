@@ -210,10 +210,10 @@ get_electrs_info_cached() {
             
             # Try to get server version for additional info (sanitize output)
             local version_raw
-            version_raw=$(printf '{"jsonrpc":"2.0","id":2,"method":"server.version","params":[]}\n' \
+            version_raw=$(printf '{"jsonrpc":"2.0","id":2,"method":"server.version","params":["node-monitor","1.4"]}\n' \
                 | timeout 5 nc -w 5 "${host}" "${port}" 2>/dev/null \
-                | tr -d '\000-\037' \
-                | jq -r '.result[0] // "unknown"' 2>/dev/null || echo "unknown")
+                | jq -r '.result[0] // "unknown"' 2>/dev/null \
+                | tr -d '\n\r' || echo "unknown")
             server_version="${version_raw:-unknown}"
             
             break
