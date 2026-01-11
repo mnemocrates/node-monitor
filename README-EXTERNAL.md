@@ -102,7 +102,7 @@ cd /usr/local/node-monitor
 # - external-config.sh.example
 # - external-helpers.sh
 # - run-external-checks.sh
-# - external-checks.d/*.sh
+# - external.d/*.sh
 # - send-signal.sh (if using Signal)
 # - send-email.sh (if using email)
 # - send-ntfy.sh (if using ntfy)
@@ -110,7 +110,7 @@ cd /usr/local/node-monitor
 # Make scripts executable
 chmod +x run-external-checks.sh
 chmod +x external-helpers.sh
-chmod +x external-checks.d/*.sh
+chmod +x external.d/*.sh
 ```
 
 ### 3. Configure Monitoring
@@ -278,7 +278,7 @@ dig node.example.com
 
 ```bash
 # Run individual check with debugging
-bash -x /usr/local/node-monitor/external-checks.d/900-external-ssh-connectivity.sh
+bash -x /usr/local/node-monitor/external.d/900-external-ssh-connectivity.sh
 
 # Check state files
 ls -la /var/lib/node-monitor-external/check-status/
@@ -351,5 +351,5 @@ location /node-status/ {
 - `external-config.sh.example` - Configuration template
 - `external-helpers.sh` - Helper functions for Tor connectivity
 - `run-external-checks.sh` - Main runner script
-- `external-checks.d/` - Individual check scripts
+- `external.d/` - Individual check scripts
 - `README.md` - This file

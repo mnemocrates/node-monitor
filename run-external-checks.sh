@@ -39,7 +39,7 @@ fi
 # Run all external checks
 ###############################################
 
-CHECKS_DIR="${SCRIPT_DIR}/external-checks.d"
+CHECKS_DIR="${SCRIPT_DIR}/external.d"
 EXIT_CODE=0
 RESULTS=()
 

@@ -142,7 +142,7 @@ node-monitor/
 ├── local.d/                  # Custom/site-specific checks (500-899)
 │   └── README.md             # Documentation for writing custom checks
 │
-├── external-checks.d/        # External monitoring checks (900-999)
+├── external.d/               # External monitoring checks (900-999)
 │   ├── 900-external-ssh-connectivity.sh
 │   ├── 910-external-bitcoin-connectivity.sh
 │   ├── 920-external-electrs-connectivity.sh
