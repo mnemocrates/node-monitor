@@ -213,8 +213,8 @@ get_electrs_info_cached() {
         local end_time=$(get_time_ms)
         response_time_ms=$((end_time - start_time))
         
-        # Check if we got a valid response
-        if [[ -n "$electrs_json" ]] && echo "$electrs_json" | jq -e '.result' >/dev/null 2>&1; then
+        # Check if we got a valid response (server.ping returns null, so check for jsonrpc field)
+        if [[ -n "$electrs_json" ]] && echo "$electrs_json" | jq -e 'has("jsonrpc")' >/dev/null 2>&1; then
             success=true
             # Get height from a separate query since server.ping doesn't return it
             local height_json
