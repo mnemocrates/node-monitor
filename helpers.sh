@@ -164,10 +164,11 @@ get_mempool_info_cached() {
 }
 
 ###############################################
-# Cached Electrs RPC: blockchain.headers.subscribe
+# Cached Electrs RPC: server.ping + metadata
 ###############################################
 # Cache electrs query results to avoid repeated connections
 # within a single run-checks.sh execution (30 second TTL)
+# Uses server.ping for accurate response time measurement (non-subscription)
 # Returns: JSON response with height, response_time_ms, server_version, success
 get_electrs_info_cached() {
     local cache_file="${STATE_DIR:-/tmp}/electrs-info-cache.json"
@@ -205,9 +206,9 @@ get_electrs_info_cached() {
         # Measure response time
         local start_time=$(get_time_ms)  # milliseconds
         
-        # Query electrs using blockchain.headers.subscribe
-        electrs_json=$(printf '{"jsonrpc":"2.0","id":1,"method":"blockchain.headers.subscribe","params":[]}\n' \
-            | timeout "${timeout}" nc -w "${timeout}" "${host}" "${port}" 2>/dev/null || echo "")
+        # Query electrs using server.ping (closes immediately after response)
+        electrs_json=$(printf '{"jsonrpc":"2.0","id":1,"method":"server.ping","params":[]}\n' \
+            | timeout "${timeout}" nc -w "${timeout}" "${host}" "${port}" 2>/dev/null | head -n 1 || echo "")
         
         local end_time=$(get_time_ms)
         response_time_ms=$((end_time - start_time))
@@ -215,12 +216,16 @@ get_electrs_info_cached() {
         # Check if we got a valid response
         if [[ -n "$electrs_json" ]] && echo "$electrs_json" | jq -e '.result' >/dev/null 2>&1; then
             success=true
-            height=$(echo "$electrs_json" | jq -r '.result.height // 0')
+            # Get height from a separate query since server.ping doesn't return it
+            local height_json
+            height_json=$(printf '{"jsonrpc":"2.0","id":3,"method":"blockchain.headers.subscribe","params":[]}\n' \
+                | timeout 5 nc -w 5 "${host}" "${port}" 2>/dev/null | head -n 1)
+            height=$(echo "$height_json" | jq -r '.result.height // 0' 2>/dev/null)
             
             # Try to get server version for additional info (sanitize output)
             local version_raw
             version_raw=$(printf '{"jsonrpc":"2.0","id":2,"method":"server.version","params":["node-monitor","1.4"]}\n' \
-                | timeout 5 nc -w 5 "${host}" "${port}" 2>/dev/null \
+                | timeout 5 nc -w 5 "${host}" "${port}" 2>/dev/null | head -n 1 \
                 | jq -r '.result[0] // ""' 2>/dev/null \
                 | tr -d '\n\r')
             server_version="${version_raw:-unknown}"
