@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+# External monitoring configuration
+# This file should be deployed to the VPS running external checks
+
+###############################################
+# Connection Mode: Tor or Clearnet
+###############################################
+# Set to true for Tor-only nodes (use .onion addresses)
+# Set to false for clearnet nodes (use IP addresses or domains)
+USE_TOR=true
+
+###############################################
+# Node Addresses
+###############################################
+# For Tor-only nodes: Use .onion addresses
+# For clearnet nodes: Use IP addresses or domain names
+#
+# Examples:
+#   Tor:      NODE_SSH_HOST="abcd1234...xyz.onion"
+#   Clearnet: NODE_SSH_HOST="192.168.1.100" or "node.example.com"
+
+# SSH service
+NODE_SSH_HOST=""                  # .onion address or IP/domain
+NODE_SSH_PORT=22
+
+# Bitcoin Core RPC
+NODE_BITCOIN_HOST=""              # .onion address or IP/domain
+NODE_BITCOIN_PORT=8332
+NODE_BITCOIN_RPC_USER=""
+NODE_BITCOIN_RPC_PASS=""
+
+# Electrs service
+NODE_ELECTRS_HOST=""              # .onion address or IP/domain
+NODE_ELECTRS_PORT=50001
+
+# LND REST API
+NODE_LND_HOST=""                  # .onion address or IP/domain
+NODE_LND_REST_PORT=8080
+NODE_LND_MACAROON_HEX=""          # Readonly macaroon in hex format
+
+###############################################
+# External Check Settings
+###############################################
+# Connection timeouts
+EXT_TIMEOUT=30                    # Seconds for connections
+EXT_RETRIES=3                     # Number of retry attempts
+EXT_RETRY_DELAY=10                # Seconds between retries
+
+# Tor configuration (only used if USE_TOR=true)
+TOR_SOCKS_HOST="127.0.0.1"
+TOR_SOCKS_PORT=9050
+
+# State directory for external checks
+EXT_STATE_DIR="/var/lib/node-monitor-external"
+
+###############################################
+# Alert Settings (same as internal monitoring)
+###############################################
+# Signal notifications
+SIGNAL_ENABLED=false
+SIGNAL_CLI_PATH="/usr/local/bin/signal-cli"
+SIGNAL_NUMBER=""                  # Your Signal number (+1234567890)
+SIGNAL_RECIPIENTS=()             # Array of recipient numbers
+
+# Email notifications
+EMAIL_ENABLED=false
+EMAIL_FROM=""
+EMAIL_TO=""
+EMAIL_SMTP_SERVER=""
+EMAIL_SMTP_PORT=587
+EMAIL_SMTP_USER=""
+EMAIL_SMTP_PASS=""
+
+# ntfy.sh notifications
+NTFY_ENABLED=false
+NTFY_TOPIC=""
+NTFY_SERVER="https://ntfy.sh"
+NTFY_PRIORITY="default"
+
+###############################################
+# Alert Thresholds
+###############################################
+# Grace period before sending first alert (seconds)
+ALERT_GRACE_PERIOD=300           # 5 minutes
+
+# Persistent failure threshold (seconds)
+ALERT_PERSISTENCE_THRESHOLD=900  # 15 minutes
+
+###############################################
+# Response Time Thresholds (milliseconds)
+###############################################
+# SSH connectivity
+SSH_RESPONSE_TIME_WARN=3000
+SSH_RESPONSE_TIME_CRIT=5000
+
+# Bitcoin Core RPC
+BITCOIN_RESPONSE_TIME_WARN=5000
+BITCOIN_RESPONSE_TIME_CRIT=10000
+
+# Electrs
+ELECTRS_EXT_RESPONSE_TIME_WARN=5000
+ELECTRS_EXT_RESPONSE_TIME_CRIT=10000
+
+# LND REST API
+LND_RESPONSE_TIME_WARN=5000
+LND_RESPONSE_TIME_CRIT=10000

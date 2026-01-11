@@ -139,8 +139,14 @@ node-monitor/
 │   ├── 450-tor-clearnet-leak.sh
 │   └── 460-heartbeat.sh
 │
-├── local.d/                  # Custom/site-specific checks (500+)
+├── local.d/                  # Custom/site-specific checks (500-899)
 │   └── README.md             # Documentation for writing custom checks
+│
+├── external-checks.d/        # External monitoring checks (900-999)
+│   ├── 900-external-ssh-connectivity.sh
+│   ├── 910-external-bitcoin-connectivity.sh
+│   ├── 920-external-electrs-connectivity.sh
+│   └── 930-external-lnd-connectivity.sh
 │
 ├── helpers.sh                # Shared helper functions (logging, retries, alerts)
 ├── run-checks.sh             # Main runner that executes checks.d/ and local.d/ in order
@@ -154,11 +160,11 @@ node-monitor/
 
 ## Custom Checks (local.d/)
 
-The `local.d/` directory allows you to add **site-specific custom checks** without interfering with upstream updates. Custom checks should use numbers **500 or higher** to run after all built-in checks.
+The `local.d/` directory allows you to add **site-specific custom checks** without interfering with upstream updates. Custom checks should use numbers **500-899** to run after built-in checks but before external monitoring checks.
 
 ### Benefits
 - **Upgrade-safe**: Your custom checks won't be overwritten by git pulls
-- **Clean separation**: Built-in checks (000-499) vs custom checks (500+)
+- **Clean separation**: Built-in checks (000-499) vs custom checks (500-899) vs external monitoring (900-999)
 - **Standard pattern**: Follows Unix convention (conf.d, cron.d, etc.)
 
 ### Quick Start
@@ -200,6 +206,49 @@ See [local.d/README.md](local.d/README.md) for complete documentation, including
 - Available helper functions
 - Best practices
 
+## External Monitoring
+
+In addition to the internal checks that run on the node itself, node-monitor includes **external monitoring** capabilities to verify your node's reachability from outside your network. This is critical for detecting outages, power failures, or network connectivity issues.
+
+### Key Features
+- **Monitor from a remote VPS** - Verify node is reachable from the internet
+- **Tor-only and clearnet modes** - Supports both privacy-focused and public nodes
+- **Same alerting system** - Uses your existing Signal/email/ntfy configuration
+- **Independent checks** - SSH, Bitcoin Core RPC, Electrs, and LND connectivity
+
+### Use Cases
+- **Tor-only nodes**: Verify hidden services are accessible without exposing clearnet IP
+- **Clearnet nodes**: Monitor public endpoints and service availability
+- **Power/network failures**: Get alerted if node becomes completely unreachable
+- **Service validation**: Ensure external users can connect to your services
+
+### Quick Start
+
+1. **Deploy external monitoring scripts to your VPS:**
+   ```bash
+   # Copy files to VPS
+   scp -r external-* user@vps:/usr/local/node-monitor/
+   scp README-EXTERNAL.md user@vps:/usr/local/node-monitor/
+   ```
+
+2. **Configure connection mode and addresses:**
+   ```bash
+   # On VPS
+   cd /usr/local/node-monitor
+   cp external-config.sh.example external-config.sh
+   nano external-config.sh
+   
+   # For Tor-only nodes: USE_TOR=true, use .onion addresses
+   # For clearnet nodes: USE_TOR=false, use IP/domain names
+   ```
+
+3. **Schedule external checks via cron:**
+   ```bash
+   */5 * * * * /usr/local/node-monitor/run-external-checks.sh
+   ```
+
+For complete setup instructions, configuration examples, and troubleshooting, see **[README-EXTERNAL.md](README-EXTERNAL.md)**.
+
 ## Built-in Checks
 
 The `checks.d/` directory contains 26+ built-in health checks covering Bitcoin Core, LND, Tor, Electrs, and system monitoring. Each check is independently configurable with its own thresholds and behavior settings.
@@ -214,6 +263,8 @@ Check categories:
 - **300-320**: Electrs (connectivity, sync status, performance)
 - **400-450**: System & Security (disk, memory, services, temperature, network, Tor-only enforcement)
 - **460**: Heartbeat (daily/weekly summary notifications)
+- **500-899**: Reserved for custom/local checks
+- **900-999**: External monitoring (run from remote VPS)
 
 ## Configuration Reference
 

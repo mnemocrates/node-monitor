@@ -12,7 +12,9 @@ This directory is for **site-specific custom checks** that are not part of the m
 
 ### Naming Convention
 
-Custom checks should use numbers **500 or higher** to run after built-in checks:
+Custom checks should use numbers **500-899** to run after built-in checks:
+
+**Note:** The 900-999 range is reserved for external monitoring checks.
 
 ```
 500-custom-backup.sh
@@ -106,9 +108,12 @@ Your custom checks can use functions from `helpers.sh`:
 - 300-320: Electrs
 - 400-450: System
 
-**Custom checks (500+):**
+**Custom checks (500-899):**
 - 500-599: Recommended for general custom checks
-- 600+: Available for additional custom checks
+- 600-899: Available for additional custom checks
+
+**External monitoring (900-999):**
+- 900-999: Reserved for external monitoring checks (run from remote VPS)
 
 ## State Files
 
