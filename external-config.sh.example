@@ -38,6 +38,11 @@ NODE_LND_HOST=""                  # .onion address or IP/domain
 NODE_LND_REST_PORT=8080
 NODE_LND_MACAROON_HEX=""          # Readonly macaroon in hex format
 
+# Status JSON (for staleness check)
+# Configure EITHER local path OR remote URL (not both)
+STATUS_JSON_LOCAL_PATH=""         # Path to local status.json file (e.g., /var/www/html/status.json)
+STATUS_JSON_URL=""                # URL to remote status.json (e.g., https://node.example.com/status.json or http://abc123.onion/status.json)
+
 ###############################################
 # External Check Settings
 ###############################################
@@ -104,3 +109,7 @@ ELECTRS_EXT_RESPONSE_TIME_CRIT=10000
 # LND REST API
 LND_RESPONSE_TIME_WARN=5000
 LND_RESPONSE_TIME_CRIT=10000
+
+# Status JSON staleness thresholds (seconds)
+STATUS_JSON_STALENESS_WARN=900    # 15 minutes
+STATUS_JSON_STALENESS_CRIT=1800   # 30 minutes
