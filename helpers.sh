@@ -50,12 +50,6 @@ retry_with_backoff() {
 ###############################################
 lncli_safe() {
   local extra_args=()
-  if [[ -n "${LND_DIR}" ]]; then
-    extra_args+=(--lnddir "${LND_DIR}")
-  fi
-  if [[ -n "${LND_NETWORK}" ]]; then
-    extra_args+=(--network "${LND_NETWORK}")
-  fi
   if [[ -n "${LND_TLSCERT}" ]]; then
     extra_args+=(--tlscertpath "${LND_TLSCERT}")
   fi
