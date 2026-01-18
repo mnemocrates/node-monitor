@@ -93,21 +93,21 @@ send_alert() {
     # Signal (if enabled)
     #
     if [ "${SIGNAL_ENABLED:-false}" = "true" ]; then
-        /usr/local/node-monitor/send-signal.sh "${message}" || true
+        "${SCRIPT_DIR}/send-signal.sh" "${message}" || true
     fi
 
     #
     # Email (if enabled)
     #
     if [ "${EMAIL_ENABLED:-false}" = "true" ]; then
-        /usr/local/node-monitor/send-email.sh "${subject}" "${message}" || true
+        "${SCRIPT_DIR}/send-email.sh" "${subject}" "${message}" || true
     fi
 
     #
     # ntfy (if enabled)
     #
     if [ "${NTFY_ENABLED:-false}" = "true" ]; then
-        /usr/local/node-monitor/send-ntfy.sh "${subject}: ${message}" || true
+        "${SCRIPT_DIR}/send-ntfy.sh" "${subject}: ${message}" || true
     fi
 }
 

@@ -107,7 +107,7 @@ fi
 
 if [[ "${NTFY_ENABLED:-false}" == "true" ]]; then
   check "ntfy send test" \
-    "/usr/local/node-monitor/send-ntfy.sh \"Node monitor test message\" >/dev/null 2>&1"
+    "\"${SCRIPT_DIR}/send-ntfy.sh\" \"Node monitor test message\" >/dev/null 2>&1"
 fi
 
 ###############################################
@@ -116,7 +116,7 @@ fi
 
 if [[ "${EMAIL_ENABLED:-false}" == "true" ]]; then
   check "email send test" \
-    "/usr/local/node-monitor/send-email.sh \"Node monitor test email\" \"This is a test email from btc-node-01\" >/dev/null 2>&1"
+    "\"${SCRIPT_DIR}/send-email.sh\" \"Node monitor test email\" \"This is a test email from btc-node-01\" >/dev/null 2>&1"
 fi
 
 ###############################################

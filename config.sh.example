@@ -249,6 +249,8 @@ MEMPOOL_UNBROADCAST_CRIT=50    # Critical if 50+ transactions unbroadcast
 # Behavior / Policy
 ##############################
 
+# Note: These paths are relative to installation directory
+# Adjust if you install node-monitor in a non-standard location
 STATE_DIR="/usr/local/node-monitor/state"
 CHECKS_DIR="/usr/local/node-monitor/checks.d"
 

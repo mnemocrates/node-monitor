@@ -4,7 +4,8 @@ set -euo pipefail
 message="$1"
 
 # Load config
-source /usr/local/node-monitor/config.sh
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/config.sh"
 
 # Exit silently if ntfy is disabled
 if [[ "${NTFY_ENABLED:-false}" != "true" ]]; then
