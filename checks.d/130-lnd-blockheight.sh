@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . "${SCRIPT_DIR}/config.sh"
 . "${SCRIPT_DIR}/helpers.sh"
 
-core_height="$("$BITCOIN_CLI" getblockcount 2>/dev/null || echo 0)"
+core_height="$(bitcoin_cli getblockcount 2>/dev/null || echo 0)"
 lnd_height="$(lncli_safe getinfo 2>/dev/null | jq -r '.block_height // 0')"
 
 if [[ "$core_height" -eq 0 || "$lnd_height" -eq 0 ]]; then

@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . "${SCRIPT_DIR}/helpers.sh"
 
 # Get blockchain info
-blockchain_info="$("$BITCOIN_CLI" getblockchaininfo 2>/dev/null)" || {
+blockchain_info="$(bitcoin_cli getblockchaininfo 2>/dev/null)" || {
     echo "WARN|Unable to query Bitcoin Core for block age"
     echo "{}"
     exit 1

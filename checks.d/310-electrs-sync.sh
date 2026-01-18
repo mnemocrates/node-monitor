@@ -25,7 +25,7 @@ if [[ "$success" != "true" ]]; then
 fi
 
 # Get Bitcoin Core height
-core_height="$("$BITCOIN_CLI" getblockcount 2>/dev/null || echo 0)"
+core_height="$(bitcoin_cli getblockcount 2>/dev/null || echo 0)"
 
 if [[ "$electrs_height" -eq 0 || "$core_height" -eq 0 ]]; then
     echo "WARN|Unable to determine Electrs/Core heights (electrs=${electrs_height}, core=${core_height})"

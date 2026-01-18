@@ -60,6 +60,17 @@ lncli_safe() {
 }
 
 ###############################################
+# bitcoin-cli wrapper (adds -conf path if set)
+###############################################
+bitcoin_cli() {
+  local extra_args=()
+  if [[ -n "${BITCOIN_CONF}" ]]; then
+    extra_args+=(-conf="${BITCOIN_CONF}")
+  fi
+  "${BITCOIN_CLI}" "${extra_args[@]}" "$@"
+}
+
+###############################################
 # Severity mapping
 ###############################################
 severity_name() {
@@ -154,7 +165,7 @@ get_mempool_info_cached() {
     
     # Cache miss or expired - fetch fresh data
     local mempool_info
-    if mempool_info=$("${BITCOIN_CLI}" getmempoolinfo 2>/dev/null); then
+    if mempool_info=$(bitcoin_cli getmempoolinfo 2>/dev/null); then
         echo "$mempool_info" > "$cache_file"
         echo "$mempool_info"
         return 0

@@ -24,6 +24,7 @@ HOSTNAME_SHORT="$(hostname -s)"
 ##############################
 
 BITCOIN_CLI="/usr/local/bin/bitcoin-cli"
+BITCOIN_CONF=""  # Optional: specify full path to bitcoin.conf (leave empty for default)
 LNCLI="/usr/local/bin/lncli"
 SIGNAL_CLI="/usr/bin/signal-cli"
 CURL_BIN="/usr/bin/curl"

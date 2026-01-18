@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 . "${SCRIPT_DIR}/helpers.sh"
 
 # Get local height
-local_height="$("$BITCOIN_CLI" getblockcount 2>/dev/null || echo 0)"
+local_height="$(bitcoin_cli getblockcount 2>/dev/null || echo 0)"
 
 if [[ "$local_height" -eq 0 ]]; then
     echo "WARN|Unable to determine local block height"

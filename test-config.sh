@@ -49,6 +49,14 @@ if [[ -n "$LND_MACAROON" ]]; then
 fi
 
 ###############################################
+# Bitcoin Core config file (optional)
+###############################################
+
+if [[ -n "$BITCOIN_CONF" ]]; then
+  check "bitcoin.conf readable" "[ -r \"$BITCOIN_CONF\" ]"
+fi
+
+###############################################
 # Directory checks
 ###############################################
 
@@ -70,7 +78,7 @@ check "Tor SOCKS reachable" \
 ###############################################
 
 check "bitcoin-cli RPC works" \
-  "\"$BITCOIN_CLI\" getblockchaininfo >/dev/null 2>&1"
+  "bitcoin_cli getblockchaininfo >/dev/null 2>&1"
 
 ###############################################
 # lncli test

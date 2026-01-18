@@ -17,7 +17,7 @@ while (( attempt < BITCOIN_RPC_RETRIES )); do
     
     # Measure latency
     start_ms=$(get_time_ms)
-    if "$BITCOIN_CLI" getblockchaininfo >/dev/null 2>&1; then
+    if bitcoin_cli getblockchaininfo >/dev/null 2>&1; then
         success=true
         end_ms=$(get_time_ms)
         latency_ms=$(( end_ms - start_ms ))

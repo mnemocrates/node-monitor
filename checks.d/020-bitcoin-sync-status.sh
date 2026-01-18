@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CHECK_NAME="020-bitcoin-sync-status"
 
 # Get blockchain info
-blockchain_info="$("$BITCOIN_CLI" getblockchaininfo 2>/dev/null)" || {
+blockchain_info="$(bitcoin_cli getblockchaininfo 2>/dev/null)" || {
     echo "CRIT|Unable to query Bitcoin Core blockchain info"
     echo "{}"
     exit 2
