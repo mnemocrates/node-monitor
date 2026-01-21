@@ -130,7 +130,7 @@ write_json_state() {
     mkdir -p "$state_dir"
     local json_file="${state_dir}/${check_name}.json"
 
-    # Build JSON:
+    # Build current state JSON
     {
         echo "{"
         echo "  \"status\": \"${status}\","
@@ -141,6 +141,26 @@ write_json_state() {
         fi
         echo "}"
     } > "$json_file"
+
+    # Append to rolling history (if HISTORY_SLOTS is configured)
+    if [[ -n "${HISTORY_SLOTS:-}" ]] && [[ "${HISTORY_SLOTS}" -gt 0 ]]; then
+        local history_file="${state_dir}/${check_name}.history.jsonl"
+        
+        # Append new entry (compact JSONL format)
+        echo "{\"t\":\"${timestamp}\",\"s\":\"${status}\"}" >> "$history_file"
+        
+        # Trim to last N slots if exceeded
+        if [[ -f "$history_file" ]]; then
+            local line_count
+            line_count=$(wc -l < "$history_file" 2>/dev/null || echo 0)
+            
+            if (( line_count > HISTORY_SLOTS )); then
+                # Keep only the last HISTORY_SLOTS lines
+                tail -n "${HISTORY_SLOTS}" "$history_file" > "${history_file}.tmp" 2>/dev/null
+                mv "${history_file}.tmp" "$history_file" 2>/dev/null || rm -f "${history_file}.tmp"
+            fi
+        fi
+    fi
 }
 
 ###############################################

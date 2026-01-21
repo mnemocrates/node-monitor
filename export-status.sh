@@ -105,7 +105,21 @@ for f in "${STATUS_DIR}"/*.json; do
     check_data="$(cat "$f")"
     sanitized_data="$(sanitize_check_json "$check_data")"
 
-    # Merge sanitized check into the JSON
+    # Merge history if enabled and available
+    if [[ "${EXPORT_HISTORY:-true}" == "true" ]]; then
+        history_file="${STATUS_DIR}/${base}.history.jsonl"
+        
+        if [[ -f "$history_file" ]]; then
+            # Convert JSONL to JSON array (read all lines, wrap in array)
+            history_array="$(jq -s '.' "$history_file" 2>/dev/null || echo "[]")"
+            
+            # Add history to the sanitized data
+            sanitized_data="$(echo "$sanitized_data" | jq --argjson hist "$history_array" \
+                '. + {history: $hist}' 2>/dev/null || echo "$sanitized_data")"
+        fi
+    fi
+
+    # Merge sanitized check (with history) into the JSON
     MERGED="$(jq --arg k "$key" --argjson data "$sanitized_data" \
         '.checks[$k] = $data' <<< "$MERGED")"
 done

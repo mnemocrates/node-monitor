@@ -375,3 +375,21 @@ NODECARD_EXPORT_SCP_IDENTITY="${HOME}/.ssh/id_ed25519"
 
 # For NODECARD_EXPORT_METHOD=local
 NODECARD_EXPORT_LOCAL_TARGET="/path/to/nodecard.json"
+
+##############################
+# History Configuration
+##############################
+
+# Number of recent check results to retain in rolling history
+# This creates a time-series view of recent check status changes
+# Examples:
+#   12  = last 12 checks (1 hour at 5-minute intervals)
+#   24  = last 24 checks (2 hours at 5-minute intervals) [default]
+#   48  = last 48 checks (4 hours at 5-minute intervals)
+#   288 = last 288 checks (24 hours at 5-minute intervals)
+HISTORY_SLOTS=24
+
+# Include history in exported status.json
+# When true, the exported status.json will contain a "history" array
+# for each check showing recent status changes
+EXPORT_HISTORY=true
