@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/config.sh"
 source "${SCRIPT_DIR}/helpers.sh"
 
-EXPORT_DIR="${STATE_DIR}/export"
+EXPORT_DIR="${EXPORT_DIR:-${STATE_DIR}/export}"  # Use configured EXPORT_DIR or default
 NODECARD_FILE="${EXPORT_DIR}/nodecard.json"
 NODECARD_UNSIGNED="${EXPORT_DIR}/nodecard_unsigned.json"
 

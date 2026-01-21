@@ -273,6 +273,10 @@ RETRY_DELAY_SECONDS=5
 # Enable or disable exporting a public‑safe status snapshot
 EXPORT_STATUS=true
 
+# Directory where export files (status.json) will be written locally
+# before being transferred to remote destination
+EXPORT_DIR="/usr/local/node-monitor/export"
+
 # Export method:
 #   scp   - push to remote host
 #   local - write to a local file

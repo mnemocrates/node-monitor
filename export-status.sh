@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/config.sh"
 
 STATUS_DIR="${STATE_DIR}/check-status"
-EXPORT_DIR="${STATE_DIR}/export"
+EXPORT_DIR="${EXPORT_DIR:-${STATE_DIR}/export}"  # Use configured EXPORT_DIR or default
 EXPORT_FILE="${EXPORT_DIR}/status.json"
 
 mkdir -p "${EXPORT_DIR}"
