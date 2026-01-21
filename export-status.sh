@@ -14,10 +14,78 @@ mkdir -p "${EXPORT_DIR}"
 # Timestamp for the export
 NOW="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
+###############################################
+# Sanitize function to remove sensitive data
+###############################################
+sanitize_check_json() {
+    local json="$1"
+    
+    # Remove URIs, onion addresses, and other sensitive location data from metrics
+    # This strips .onion addresses, IP addresses, hostnames while keeping counts and status
+    json=$(echo "$json" | jq '
+        # Recursively walk through the object and sanitize sensitive fields
+        walk(
+            if type == "object" then
+                # Remove uri/URI fields completely
+                del(.uri, .URI, .uris, .URIs) |
+                # Redact host/hostname/address fields
+                if has("host") then 
+                    if .host == "" or .host == null then . 
+                    else .host = "[REDACTED]" 
+                    end 
+                else . end |
+                if has("hostname") then 
+                    if .hostname == "" or .hostname == null then . 
+                    else .hostname = "[REDACTED]" 
+                    end 
+                else . end |
+                if has("address") then 
+                    if .address == "" or .address == null then . 
+                    else .address = "[REDACTED]" 
+                    end 
+                else . end |
+                # Remove hosts objects/arrays completely
+                if has("hosts") then del(.hosts) else . end |
+                # Sanitize ping results object - remove specific hosts but keep success indicators
+                if has("ping") and (.ping | type == "object") then
+                    .ping |= (
+                        # Keep only aggregated metrics, remove per-host results
+                        {success_count, total_count}
+                    )
+                else . end |
+                # Sanitize DNS results - keep only success flag and response time
+                if has("dns") and (.dns | type == "object") then
+                    .dns |= (
+                        # Remove the specific host being tested
+                        del(.host)
+                    )
+                else . end
+            elif type == "array" then
+                # For arrays, check if they contain URI-like strings
+                if all(type == "string") and length > 0 then
+                    if (.[0] | test("^[a-z0-9]{16,}\\.onion|://|@.*:|^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}")) then
+                        # Array contains URIs/onions/IPs - replace with redacted markers
+                        [range(length) | "[REDACTED]"]
+                    else
+                        # Keep array as-is
+                        .
+                    end
+                else
+                    # Keep array but sanitize its elements recursively
+                    .
+                end
+            else
+                .
+            end
+        )
+    ')
+    
+    echo "$json"
+}
+
 # Start building the merged JSON
 MERGED='{
   "node": "'"${NODE_NAME}"'",
-  "hostname": "'"${HOSTNAME_SHORT}"'",
   "timestamp": "'"${NOW}"'",
   "checks": {}
 }'
@@ -33,9 +101,13 @@ for f in "${STATUS_DIR}"/*.json; do
     key="${base#*-}"                     # remove NNN-
     key="${key//-/_}"                    # hyphens → underscores
 
-    # Merge this check into the JSON
-    MERGED="$(jq --arg k "$key" --slurpfile data "$f" \
-        '.checks[$k] = $data[0]' <<< "$MERGED")"
+    # Read and sanitize the check JSON to remove sensitive data
+    check_data="$(cat "$f")"
+    sanitized_data="$(sanitize_check_json "$check_data")"
+
+    # Merge sanitized check into the JSON
+    MERGED="$(jq --arg k "$key" --argjson data "$sanitized_data" \
+        '.checks[$k] = $data' <<< "$MERGED")"
 done
 
 # Write final JSON
