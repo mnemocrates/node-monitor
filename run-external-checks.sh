@@ -111,9 +111,9 @@ crit_count=0
 for result in "${RESULTS[@]}"; do
     status=$(echo "$result" | cut -d'|' -f1)
     case "$status" in
-        OK) ((ok_count++)) ;;
-        WARN) ((warn_count++)) ;;
-        CRIT) ((crit_count++)) ;;
+        OK) ok_count=$((ok_count + 1)) ;;
+        WARN) warn_count=$((warn_count + 1)) ;;
+        CRIT) crit_count=$((crit_count + 1)) ;;
     esac
 done
 
