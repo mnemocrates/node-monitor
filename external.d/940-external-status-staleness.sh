@@ -59,7 +59,7 @@ elif [[ -n "${STATUS_JSON_URL:-}" ]]; then
     status_content=""
     
     while (( attempt < EXT_RETRIES )); do
-        ((attempt++))
+        attempt=$((attempt + 1))
         
         # Measure response time
         start_time=$(get_time_ms)

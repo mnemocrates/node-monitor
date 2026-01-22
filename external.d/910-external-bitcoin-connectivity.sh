@@ -30,7 +30,7 @@ success=false
 response_time_ms=0
 
 while (( attempt < EXT_RETRIES )); do
-    ((attempt++))
+    attempt=$((attempt + 1))
     
     # Measure response time
     start_time=$(get_time_ms)
