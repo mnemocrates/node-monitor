@@ -35,12 +35,21 @@ while (( attempt < EXT_RETRIES )); do
     # Measure response time
     start_time=$(get_time_ms)
     
-    # Try to connect to LND P2P port (simple TCP check)
-    if echo "" | smart_nc "${NODE_LND_HOST}" "${LND_P2P_PORT}" 5 >/dev/null 2>&1; then
-        end_time=$(get_time_ms)
-        response_time_ms=$((end_time - start_time))
-        success=true
-        break
+    # Try to connect to LND P2P port (port scan check)
+    if [[ "${USE_TOR}" == "true" ]]; then
+        if torsocks timeout 5 nc -z "${NODE_LND_HOST}" "${LND_P2P_PORT}" 2>/dev/null; then
+            end_time=$(get_time_ms)
+            response_time_ms=$((end_time - start_time))
+            success=true
+            break
+        fi
+    else
+        if timeout 5 nc -z "${NODE_LND_HOST}" "${LND_P2P_PORT}" 2>/dev/null; then
+            end_time=$(get_time_ms)
+            response_time_ms=$((end_time - start_time))
+            success=true
+            break
+        fi
     fi
     
     end_time=$(get_time_ms)
