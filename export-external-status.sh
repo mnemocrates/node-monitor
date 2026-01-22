@@ -64,3 +64,46 @@ done
 echo "$MERGED" | jq '.' > "${EXPORT_FILE}"
 
 echo "External status exported to: ${EXPORT_FILE}"
+
+# Export to configured destination
+case "${EXT_EXPORT_METHOD:-none}" in
+  scp)
+    if [[ -z "${EXT_EXPORT_SCP_TARGET}" ]]; then
+        echo "WARN: EXT_EXPORT_METHOD=scp but EXT_EXPORT_SCP_TARGET not configured" >&2
+    else
+        if [[ "${EXT_EXPORT_TRANSPORT}" == "torsocks" ]]; then
+            if torsocks scp -i "${EXT_EXPORT_SCP_IDENTITY}" -q "${EXPORT_FILE}" "${EXT_EXPORT_SCP_TARGET}"; then
+                echo "External status pushed via SCP over Tor to: ${EXT_EXPORT_SCP_TARGET}"
+            else
+                echo "ERROR: Failed to push external status via SCP over Tor" >&2
+                exit 1
+            fi
+        else
+            if scp -i "${EXT_EXPORT_SCP_IDENTITY}" -q "${EXPORT_FILE}" "${EXT_EXPORT_SCP_TARGET}"; then
+                echo "External status pushed via SCP to: ${EXT_EXPORT_SCP_TARGET}"
+            else
+                echo "ERROR: Failed to push external status via SCP" >&2
+                exit 1
+            fi
+        fi
+    fi
+    ;;
+  local)
+    if [[ -z "${EXT_EXPORT_LOCAL_TARGET}" ]]; then
+        echo "WARN: EXT_EXPORT_METHOD=local but EXT_EXPORT_LOCAL_TARGET not configured" >&2
+    else
+        if cp "${EXPORT_FILE}" "${EXT_EXPORT_LOCAL_TARGET}"; then
+            echo "External status copied to: ${EXT_EXPORT_LOCAL_TARGET}"
+        else
+            echo "ERROR: Failed to copy external status to local target" >&2
+            exit 1
+        fi
+    fi
+    ;;
+  none)
+    echo "Export disabled (EXT_EXPORT_METHOD=none)"
+    ;;
+  *)
+    echo "WARN: Unknown EXT_EXPORT_METHOD: ${EXT_EXPORT_METHOD:-not set}" >&2
+    ;;
+esac

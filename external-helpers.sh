@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=/usr/local/node-monitor/external-config.sh
-. "${SCRIPT_DIR}/external-config.sh"
+# Note: This file is sourced by check scripts that have already sourced external-config.sh
+# Do not source external-config.sh here to avoid redundant sourcing
 
 ###############################################
 # Get current time in milliseconds (portable)

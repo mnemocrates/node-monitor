@@ -23,20 +23,17 @@ USE_TOR=true
 NODE_SSH_HOST=""                  # .onion address or IP/domain
 NODE_SSH_PORT=22
 
-# Bitcoin Core RPC
+# Bitcoin Core P2P (no credentials needed)
 NODE_BITCOIN_HOST=""              # .onion address or IP/domain
-NODE_BITCOIN_PORT=8332
-NODE_BITCOIN_RPC_USER=""
-NODE_BITCOIN_RPC_PASS=""
+NODE_BITCOIN_P2P_PORT=8333        # P2P port (not RPC port)
 
 # Electrs service
 NODE_ELECTRS_HOST=""              # .onion address or IP/domain
 NODE_ELECTRS_PORT=50001
 
-# LND REST API
+# LND P2P (no credentials needed)
 NODE_LND_HOST=""                  # .onion address or IP/domain
-NODE_LND_REST_PORT=8080
-NODE_LND_MACAROON_HEX=""          # Readonly macaroon in hex format
+NODE_LND_P2P_PORT=9735            # P2P port (not REST/gRPC port)
 
 # Status JSON (for staleness check)
 # Configure EITHER local path OR remote URL (not both)
@@ -78,9 +75,14 @@ EMAIL_SMTP_PASS=""
 
 # ntfy.sh notifications
 NTFY_ENABLED=false
+NTFY_USE_TOR=true
+
+# Full topic URL (not just the topic name)
+# Example: https://ntfy.sh/my-external-monitor-alerts
 NTFY_TOPIC=""
-NTFY_SERVER="https://ntfy.sh"
-NTFY_PRIORITY="default"
+
+# Optional bearer token for protected topics
+NTFY_TOKEN=""
 
 ###############################################
 # Alert Thresholds
@@ -122,3 +124,30 @@ STATUS_JSON_STALENESS_CRIT=1800   # 30 minutes
 # Set to 0 to disable history collection
 # Example: 24 slots = last 24 check runs (2 hours at 5min intervals)
 HISTORY_SLOTS=24
+
+###############################################
+# External Status Export Configuration
+###############################################
+# Export method for external-status.json:
+#   local - write to a local file path (e.g., for web server)
+#   scp   - push to remote host via SCP
+#   none  - disable exporting (only keep in ${EXT_STATE_DIR}/export/)
+EXT_EXPORT_METHOD="local"
+
+# For EXT_EXPORT_METHOD=local
+# Path where external-status.json should be copied
+# Example: /var/www/html/external-status.json
+EXT_EXPORT_LOCAL_TARGET=""
+
+# For EXT_EXPORT_METHOD=scp
+# Target for SCP transfer (can be local network or Tor .onion)
+# Examples:
+#   EXT_EXPORT_SCP_TARGET="user@webserver:/var/www/html/external-status.json"
+#   EXT_EXPORT_SCP_TARGET="user@abc123.onion:/var/www/external-status.json"
+EXT_EXPORT_SCP_TARGET=""
+EXT_EXPORT_SCP_IDENTITY="${HOME}/.ssh/id_ed25519"
+
+# Export transport (only used with scp method):
+#   ssh      - standard SSH
+#   torsocks - use torsocks for Tor-based SCP
+EXT_EXPORT_TRANSPORT="ssh"
