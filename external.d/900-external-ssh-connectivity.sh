@@ -50,7 +50,13 @@ while (( attempt < EXT_RETRIES )); do
     fi
 done
 
-metrics_json="{\"response_time_ms\": ${response_time_ms}, \"attempts\": ${attempt}}"
+# Extract SSH version from banner for metrics
+ssh_version=""
+if [[ "$ssh_banner" =~ ^SSH-([0-9.]+) ]]; then
+    ssh_version="${BASH_REMATCH[1]}"
+fi
+
+metrics_json="{\"response_time_ms\": ${response_time_ms}, \"attempts\": ${attempt}, \"ssh_version\": \"${ssh_version}\"}"
 
 if ! $success; then
     connection_type="$([[ "${USE_TOR}" == "true" ]] && echo "Tor" || echo "direct")"

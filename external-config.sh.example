@@ -113,3 +113,12 @@ LND_RESPONSE_TIME_CRIT=10000
 # Status JSON staleness thresholds (seconds)
 STATUS_JSON_STALENESS_WARN=900    # 15 minutes
 STATUS_JSON_STALENESS_CRIT=1800   # 30 minutes
+
+###############################################
+# Check History Settings
+###############################################
+# Number of historical check results to store (per check)
+# Each slot represents one check run, useful for tracking status trends
+# Set to 0 to disable history collection
+# Example: 24 slots = last 24 check runs (2 hours at 5min intervals)
+HISTORY_SLOTS=24

@@ -120,4 +120,12 @@ done
 echo "OK: ${ok_count} | WARN: ${warn_count} | CRIT: ${crit_count}"
 echo "========================================="
 
+# Export consolidated external status JSON
+if [[ -x "${SCRIPT_DIR}/export-external-status.sh" ]]; then
+    "${SCRIPT_DIR}/export-external-status.sh" || \
+        echo "WARN: export-external-status.sh failed (non-fatal)" >&2
+else
+    echo "WARN: export-external-status.sh not found or not executable" >&2
+fi
+
 exit $EXIT_CODE
