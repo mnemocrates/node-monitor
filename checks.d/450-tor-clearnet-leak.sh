@@ -157,13 +157,13 @@ fi
 
 # Determine status
 if [[ $new_leak_count -gt 0 ]]; then
-    # NEW clearnet leak detected
+    # NEW clearnet leak detected - include details in log, but not in exported JSON
     leak_details=$(echo "$new_leaks" | grep -v '^$' | while IFS='|' read -r dest proc; do
         echo "${proc:-unknown} → $dest"
     done | paste -sd ', ' -)
     
     echo "CRIT|NEW clearnet leak: ${leak_details} (${new_leak_count} new, ${leak_count} total)"
-    echo "{\"status\": \"leak\", \"total_leaks\": $leak_count, \"new_leaks\": $new_leak_count, \"connections\": $leak_list}"
+    echo "{\"status\": \"leak\", \"total_leaks\": $leak_count, \"new_leaks\": $new_leak_count}"
     
     # Update state with current leaks
     jq -n --argjson leaks "$leak_list" '{
@@ -173,7 +173,7 @@ if [[ $new_leak_count -gt 0 ]]; then
     
     exit 2
 elif [[ $leak_count -gt 0 ]]; then
-    # Known leaks, but no new ones
+    # Known leaks, but no new ones - include details in log, but not in exported JSON
     leak_summary=$(echo "$current_leaks" | grep -v '^$' | while IFS='|' read -r dest proc; do
         echo "${proc:-unknown} → $dest"
     done | head -3 | paste -sd ', ' -)
@@ -184,7 +184,7 @@ elif [[ $leak_count -gt 0 ]]; then
     fi
     
     echo "WARN|Clearnet leak ongoing: ${leak_summary}${more_text} (${leak_count} known)"
-    echo "{\"status\": \"known_leak\", \"total_leaks\": $leak_count, \"new_leaks\": 0, \"connections\": $leak_list}"
+    echo "{\"status\": \"known_leak\", \"total_leaks\": $leak_count, \"new_leaks\": 0}"
     exit 1
 else
     # No leaks detected

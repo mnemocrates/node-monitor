@@ -29,7 +29,7 @@ for uri in $uris; do
     # Expect pubkey@host:port
     if [[ "$uri" != *@*:* ]]; then
         messages+=("INVALID $uri")
-        metrics_entries+=("{\"uri\": \"${uri}\", \"status\": \"INVALID\"}")
+        metrics_entries+=("{\"status\": \"INVALID\"}")
         fail_count=$((fail_count + 1))
         continue
     fi
@@ -40,7 +40,7 @@ for uri in $uris; do
 
     if [[ -z "$host" || -z "$port" ]]; then
         messages+=("INVALID $uri")
-        metrics_entries+=("{\"uri\": \"${onion}\", \"status\": \"INVALID\"}")
+        metrics_entries+=("{\"status\": \"INVALID\"}")
         fail_count=$((fail_count + 1))
         continue
     fi
@@ -65,10 +65,10 @@ for uri in $uris; do
     
     if $success; then
         messages+=("OK ${host}:${port}")
-        metrics_entries+=("{\"uri\": \"${host}:${port}\", \"status\": \"OK\", \"attempts\": ${attempt}}")
+        metrics_entries+=("{\"status\": \"OK\", \"attempts\": ${attempt}}")
     else
         messages+=("FAIL ${host}:${port}")
-        metrics_entries+=("{\"uri\": \"${host}:${port}\", \"status\": \"FAIL\", \"attempts\": ${attempt}}")
+        metrics_entries+=("{\"status\": \"FAIL\", \"attempts\": ${attempt}}")
         fail_count=$((fail_count + 1))
     fi
 done

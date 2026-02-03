@@ -66,7 +66,7 @@ if ! $success; then
     
     # Send alert if failure persists beyond grace period
     if check_failure_duration "$CHECK_NAME" "CRIT" "${ALERT_GRACE_PERIOD}"; then
-        send_alert "EXTERNAL: Node Unreachable" "SSH service on ${NODE_SSH_HOST} is not reachable via ${connection_type} (${attempt} attempts)"
+        send_alert "EXTERNAL: Node Unreachable" "SSH service is not reachable via ${connection_type} (${attempt} attempts)"
     fi
     exit 2
 fi

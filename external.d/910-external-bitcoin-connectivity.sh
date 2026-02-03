@@ -69,7 +69,7 @@ if ! $success; then
     write_json_state "$CHECK_NAME" "CRIT" "Bitcoin Core P2P not reachable" "$metrics_json"
     
     if check_failure_duration "$CHECK_NAME" "CRIT" "${ALERT_GRACE_PERIOD}"; then
-        send_alert "EXTERNAL: Bitcoin Core Unreachable" "Bitcoin Core P2P on ${NODE_BITCOIN_HOST}:${BITCOIN_P2P_PORT} is not reachable via ${connection_type} (${attempt} attempts)"
+        send_alert "EXTERNAL: Bitcoin Core Unreachable" "Bitcoin Core P2P is not reachable via ${connection_type} (${attempt} attempts)"
     fi
     exit 2
 fi

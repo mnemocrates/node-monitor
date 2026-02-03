@@ -89,7 +89,7 @@ elif [[ -n "${STATUS_JSON_URL:-}" ]]; then
         write_json_state "$CHECK_NAME" "CRIT" "status.json not reachable" "$metrics_json"
         
         if check_failure_duration "$CHECK_NAME" "CRIT" "${ALERT_GRACE_PERIOD}"; then
-            send_alert "EXTERNAL: Status File Unreachable" "status.json at ${STATUS_JSON_URL} is not reachable via ${connection_type} (${attempt} attempts)"
+            send_alert "EXTERNAL: Status File Unreachable" "status.json is not reachable via ${connection_type} (${attempt} attempts)"
         fi
         exit 2
     fi

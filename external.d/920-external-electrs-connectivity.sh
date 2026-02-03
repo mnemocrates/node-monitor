@@ -68,7 +68,7 @@ if ! $success; then
     write_json_state "$CHECK_NAME" "CRIT" "Electrs not reachable" "$metrics_json"
     
     if check_failure_duration "$CHECK_NAME" "CRIT" "${ALERT_GRACE_PERIOD}"; then
-        send_alert "EXTERNAL: Electrs Unreachable" "Electrs on ${NODE_ELECTRS_HOST} is not reachable via ${connection_type} (${attempt} attempts)"
+        send_alert "EXTERNAL: Electrs Unreachable" "Electrs is not reachable via ${connection_type} (${attempt} attempts)"
     fi
     exit 2
 fi
