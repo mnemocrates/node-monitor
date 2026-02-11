@@ -49,11 +49,12 @@ if (( inactive >= LND_CHANNELS_INACTIVE_WARN )); then
 fi
 
 # Build message
+channel_summary="${active} active, ${inactive} inactive, ${pending} pending"
 if [[ "${#issues[@]}" -eq 0 ]]; then
-    message="LND channels healthy: ${active} active, ${inactive} inactive, ${pending} pending"
+    message="LND channels healthy: ${channel_summary}"
 else
     issue_str=$(IFS=', '; echo "${issues[*]}")
-    message="LND channel issues: ${issue_str}"
+    message="LND channel issues: ${issue_str} | ${channel_summary}"
 fi
 
 echo "${severity}|${message}"
