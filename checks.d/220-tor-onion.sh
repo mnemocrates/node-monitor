@@ -20,7 +20,6 @@ fi
 
 fail_count=0
 total_count=0
-messages=()
 metrics_entries=()
 
 for uri in $uris; do
@@ -28,7 +27,6 @@ for uri in $uris; do
     
     # Expect pubkey@host:port
     if [[ "$uri" != *@*:* ]]; then
-        messages+=("INVALID $uri")
         metrics_entries+=("{\"status\": \"INVALID\"}")
         fail_count=$((fail_count + 1))
         continue
@@ -39,7 +37,6 @@ for uri in $uris; do
     port="${onion##*:}"
 
     if [[ -z "$host" || -z "$port" ]]; then
-        messages+=("INVALID $uri")
         metrics_entries+=("{\"status\": \"INVALID\"}")
         fail_count=$((fail_count + 1))
         continue
@@ -64,10 +61,8 @@ for uri in $uris; do
     done
     
     if $success; then
-        messages+=("OK ${host}:${port}")
         metrics_entries+=("{\"status\": \"OK\", \"attempts\": ${attempt}}")
     else
-        messages+=("FAIL ${host}:${port}")
         metrics_entries+=("{\"status\": \"FAIL\", \"attempts\": ${attempt}}")
         fail_count=$((fail_count + 1))
     fi
@@ -86,17 +81,17 @@ if (( fail_count == 0 )); then
     exit 0
 elif (( fail_ratio < 50 )); then
     # Less than half failed - WARN only
-    echo "WARN|Some LND onion URIs unreachable (${fail_count}/${total_count}): ${messages[*]}"
+    echo "WARN|Some LND onion URIs unreachable (${fail_count}/${total_count})"
     echo "$metrics_json"
     exit 1
 else
     # Majority failed - check if persistent before escalating to CRIT
     if check_failure_duration "$CHECK_NAME" "CRIT" "${TOR_FAILURE_CRIT_DURATION}"; then
-        echo "CRIT|Most/all LND onions unreachable persistently (${fail_count}/${total_count}): ${messages[*]}"
+        echo "CRIT|Most/all LND onions unreachable persistently (${fail_count}/${total_count})"
         echo "$metrics_json"
         exit 2
     else
-        echo "WARN|Most/all LND onions unreachable (${fail_count}/${total_count}, will escalate if persistent): ${messages[*]}"
+        echo "WARN|Most/all LND onions unreachable (${fail_count}/${total_count}, will escalate if persistent)"
         echo "$metrics_json"
         exit 1
     fi
